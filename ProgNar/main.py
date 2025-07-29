@@ -9,6 +9,7 @@ from wiertla_menu import WiertlaMenu
 from pozostale_menu import PozostaleMenu
 from uslugi_menu import UslugiMenu
 from utils import format_price
+from cenniki import CennikiMenu
 
 class ToolPricingApp:
     """Główna klasa aplikacji z menu głównym i koszykiem."""
@@ -75,6 +76,7 @@ class ToolPricingApp:
             ).pack()
         except Exception as e:
             print(f"Błąd wczytywania obrazów: {e}")
+
             # Fallback: Przyciski tekstowe, jeśli obrazy nie są dostępne
             frezy_frame = tk.Frame(button_row_frame, bg="lightgrey")
             frezy_frame.pack(side=tk.LEFT, padx=10)
@@ -126,9 +128,17 @@ class ToolPricingApp:
 
         # Ramka dla loga
         logo_frame = tk.Frame(self.left_frame, bg="lightgrey")
-        logo_frame.pack(pady=0)
+        logo_frame.pack(pady=5)
         try:
-            tk.Label(logo_frame, image=self.logo_photo, bg="lightgrey").pack()
+            tk.Button(
+                logo_frame,
+                image=self.logo_photo,
+                command=self.show_cenniki_menu,
+                relief="flat",
+                borderwidth=0,
+                bg="lightgrey",
+                activebackground="lightgrey"
+            ).pack()
         except AttributeError:
             tk.Label(logo_frame, text="Logo niedostępne", bg="lightgrey", font=("Arial", 10)).pack()
 
@@ -202,6 +212,10 @@ class ToolPricingApp:
     def show_uslugi_menu(self):
         """Otwiera menu usług."""
         UslugiMenu(self.root, self.cart, main_app=self)
+
+    def show_cenniki_menu(self):
+        """Otwiera menu cennika."""
+        CennikiMenu()
 
     def delete_selected(self):
         """Usuwa wybraną pozycję z koszyka."""
