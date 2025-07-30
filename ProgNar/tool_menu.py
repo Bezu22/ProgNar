@@ -27,7 +27,7 @@ class ToolMenu:
         # Tworzenie okna
         self.top = tk.Toplevel(parent)
         self.top.title(title)
-        self.top.geometry("500x600")
+        self.top.geometry("500x700")
 
         # Typ narzędzia
         tk.Label(self.top, text="Wybierz typ:", font=("Arial", 12)).pack(pady=10)
@@ -53,7 +53,7 @@ class ToolMenu:
             self.diameter_buttons[value] = btn
 
         self.diameter_var = tk.StringVar(value=default_diameter)
-        self.diameter_entry = tk.Entry(self.top, textvariable=self.diameter_var)
+        self.diameter_entry = tk.Entry(self.top, textvariable=self.diameter_var, width=10)
         self.diameter_entry.pack(pady=5)
         self.diameter_entry.bind("<KeyRelease>", self.on_diameter_entry_change)
 
@@ -61,17 +61,25 @@ class ToolMenu:
         tk.Label(self.top, text="Wybierz ilość ostrzy:", font=("Arial", 12)).pack(pady=5)
         self.z_frame = tk.Frame(self.top)
         self.z_frame.pack(pady=5)
-        self.z_var = tk.StringVar(value="2-4")
-        self.z_button = tk.Button(self.z_frame, text="2 - 4", width=6, command=lambda: self.select_z("2-4"))
-        self.z_button.pack(side="left", padx=5)
-        self.z_entry = tk.Entry(self.z_frame, textvariable=self.z_var, width=10)
-        self.z_entry.pack(side="left", padx=5)
+        self.z_var = tk.StringVar(value="4")  # Domyślna wartość: 4
+        self.z_buttons = {}
+        z_options = ["1", "2", "3", "4", "5", "6"]
+        for z in z_options:
+            btn = tk.Button(self.z_frame, text=z, width=6,
+                            command=lambda v=z: self.select_z(v))
+            btn.pack(side="left", padx=5)
+            self.z_buttons[z] = btn
+            btn.config(bg="lightgreen" if z == "4" else "SystemButtonFace",
+                       relief="sunken" if z == "4" else "raised")
+
+        self.z_entry = tk.Entry(self.top, textvariable=self.z_var, width=10)
+        self.z_entry.pack(pady=5)
         self.z_entry.bind("<KeyRelease>", self.on_z_entry_change)
 
         # Ilość sztuk
         tk.Label(self.top, text="Ilość sztuk:", font=("Arial", 12)).pack(pady=5)
         self.quantity_var = tk.StringVar(value="1")
-        self.quantity_entry = tk.Entry(self.top, textvariable=self.quantity_var)
+        self.quantity_entry = tk.Entry(self.top, textvariable=self.quantity_var, width=10)
         self.quantity_entry.pack(pady=5)
         self.quantity_entry.bind("<KeyRelease>", self.update_price)
 
@@ -86,8 +94,9 @@ class ToolMenu:
         self.total_price_label = tk.Label(self.top, text="Wartość: 0.00 PLN", font=("Arial", 12, "bold"))
         self.total_price_label.pack(pady=10)
 
-        # Przyciski
-        tk.Button(self.top, text="Dodaj do koszyka", font=("Arial", 12), command=self.add_to_cart).pack(pady=5)
+        # Przyciski akcji
+        self.add_button = tk.Button(self.top, text="Dodaj do koszyka", font=("Arial", 12), command=self.add_to_cart)
+        self.add_button.pack(pady=5)
         tk.Button(self.top, text="Zamknij", font=("Arial", 12), command=self.top.destroy).pack(pady=5)
 
         # Inicjalizacja stylu przycisków
@@ -97,8 +106,7 @@ class ToolMenu:
         for value, btn in self.diameter_buttons.items():
             btn.config(bg="lightgreen" if value == default_diameter else "SystemButtonFace",
                        relief="sunken" if value == default_diameter else "raised")
-        self.z_button.config(bg="lightgreen", relief="sunken")
-        self.update_price()  # Wywołaj raz na koniec
+        self.update_price()
 
     def select_type(self, type_name):
         """Ustawia wybrany typ i aktualizuje interfejs."""
@@ -124,18 +132,20 @@ class ToolMenu:
             btn.config(bg="SystemButtonFace", relief="raised")
         self.update_z_and_price()
 
-    def select_z(self, z_value, update_entry=True):
+    def select_z(self, z_value):
         """Ustawia wybraną ilość ostrzy i aktualizuje styl przycisku."""
         self.z_var.set(z_value)
-        if update_entry:
-            self.z_entry.delete(0, tk.END)
-            self.z_entry.insert(0, z_value)
-        self.z_button.config(bg="lightgreen", relief="sunken")
+        self.z_entry.delete(0, tk.END)
+        self.z_entry.insert(0, z_value)
+        for value, btn in self.z_buttons.items():
+            btn.config(bg="lightgreen" if value == z_value else "SystemButtonFace",
+                       relief="sunken" if value == z_value else "raised")
         self.update_price()
 
     def on_z_entry_change(self, event=None):
-        """Odznacza przycisk ostrzy przy wpisywaniu w pole tekstowe."""
-        self.z_button.config(bg="SystemButtonFace", relief="raised")
+        """Odznacza przyciski ostrzy przy wpisywaniu w pole tekstowe."""
+        for btn in self.z_buttons.values():
+            btn.config(bg="SystemButtonFace", relief="raised")
         self.update_price()
 
     def update_z_and_price(self):
@@ -144,26 +154,26 @@ class ToolMenu:
         try:
             z_value = float(current_z)
             if not z_value.is_integer():
-                self.z_var.set("2-4")
+                self.z_var.set("4")
                 self.z_entry.delete(0, tk.END)
-                self.z_entry.insert(0, "2-4")
-                self.z_button.config(bg="lightgreen", relief="sunken")
+                self.z_entry.insert(0, "4")
+                for value, btn in self.z_buttons.items():
+                    btn.config(bg="lightgreen" if value == "4" else "SystemButtonFace",
+                               relief="sunken" if value == "4" else "raised")
             else:
                 self.z_var.set(current_z)
                 self.z_entry.delete(0, tk.END)
                 self.z_entry.insert(0, current_z)
-                self.z_button.config(bg="SystemButtonFace", relief="raised")
+                for value, btn in self.z_buttons.items():
+                    btn.config(bg="lightgreen" if value == current_z else "SystemButtonFace",
+                               relief="sunken" if value == current_z else "raised")
         except (ValueError, TypeError):
-            if current_z == "2-4":
-                self.z_var.set("2-4")
-                self.z_entry.delete(0, tk.END)
-                self.z_entry.insert(0, "2-4")
-                self.z_button.config(bg="lightgreen", relief="sunken")
-            else:
-                self.z_var.set("2-4")
-                self.z_entry.delete(0, tk.END)
-                self.z_entry.insert(0, "2-4")
-                self.z_button.config(bg="lightgreen", relief="sunken")
+            self.z_var.set("4")
+            self.z_entry.delete(0, tk.END)
+            self.z_entry.insert(0, "4")
+            for value, btn in self.z_buttons.items():
+                btn.config(bg="lightgreen" if value == "4" else "SystemButtonFace",
+                           relief="sunken" if value == "4" else "raised")
         self.price_label.config(text="Cena ostrzenia: 0.00 PLN")
         self.powlekanie_menu.coating_price_label.config(text="Cena powloki: 0.00 PLN")
         self.total_price_label.config(text="Wartość: 0.00 PLN")
