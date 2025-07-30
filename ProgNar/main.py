@@ -22,7 +22,7 @@ class ToolPricingApp:
         # Inicjalizacja głównego okna
         self.root = root
         self.root.title("ProgNar – System Regeneracji i Wyceny Narzędzi")
-        self.root.geometry("900x500")
+        self.root.geometry("1200x500")  # Rozszerzone okno
 
         self.cart = Cart()
 
@@ -77,7 +77,7 @@ class ToolPricingApp:
         except Exception as e:
             print(f"Błąd wczytywania obrazów: {e}")
 
-            # Fallback: Przyciski tekstowe, jeśli obrazy nie są dostępne
+            # Fallback: Przyciski tekstowe
             frezy_frame = tk.Frame(button_row_frame, bg="lightgrey")
             frezy_frame.pack(side=tk.LEFT, padx=10)
             tk.Label(frezy_frame, text="Frezy", bg="lightgrey", font=("Arial", 10)).pack()
@@ -143,7 +143,7 @@ class ToolPricingApp:
             tk.Label(logo_frame, text="Logo niedostępne", bg="lightgrey", font=("Arial", 10)).pack()
 
         # Prawa ramka dla koszyka
-        self.right_frame = tk.Frame(self.root, width=550)
+        self.right_frame = tk.Frame(self.root, width=750)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         # Ramka dla tabeli i suwaków
@@ -151,19 +151,38 @@ class ToolPricingApp:
         tree_scroll_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Tabela koszyka
-        columns = ("Nazwa", "Srednica", "Ilosc zebow", "Ilosc sztuk", "Cena/szt", "Wartosc", "Powlekanie")
+        columns = ("LP", "Nazwa", "Srednica", "fiChwyt", "Ilosc zebow", "Ilosc sztuk", "ciecie", "Cena/szt", "Wartosc", "Powlekanie", "L", "Cena powlekania/szt", "Wartosc powlekania", "Uwagi")
         self.cart_tree = ttk.Treeview(tree_scroll_frame, columns=columns, show="headings")
-        for col in columns:
-            self.cart_tree.heading(col, text=col.replace("Srednica", "φOD").replace("Ilosc zebow", "z").replace("Ilosc sztuk", "Ilość sztuk").replace("Cena/szt", "Cena/szt").replace("Wartosc", "Netto").replace("Powlekanie", "Powłoka"))
+        self.cart_tree.heading("LP", text="L.P.")
+        self.cart_tree.heading("Nazwa", text="Nazwa")
+        self.cart_tree.heading("Srednica", text="φOD")
+        self.cart_tree.heading("fiChwyt", text="φChwyt")
+        self.cart_tree.heading("Ilosc zebow", text="z")
+        self.cart_tree.heading("Ilosc sztuk", text="Ilość sztuk")
+        self.cart_tree.heading("ciecie", text="cięcie")
+        self.cart_tree.heading("Cena/szt", text="Cena/szt")
+        self.cart_tree.heading("Wartosc", text="Netto")
+        self.cart_tree.heading("Powlekanie", text="Powłoka")
+        self.cart_tree.heading("L", text="L")
+        self.cart_tree.heading("Cena powlekania/szt", text="Cena powlekania/szt")
+        self.cart_tree.heading("Wartosc powlekania", text="Wartość powlekania")
+        self.cart_tree.heading("Uwagi", text="Uwagi")
 
-        # Ustawienie szerokości kolumn (suma < 550 pikseli)
+        # Ustawienie szerokości kolumn
+        self.cart_tree.column("LP", width=50, anchor=tk.CENTER)
         self.cart_tree.column("Nazwa", width=100, anchor=tk.CENTER)
-        self.cart_tree.column("Srednica", width=20, anchor=tk.CENTER)
-        self.cart_tree.column("Ilosc zebow", width=10, anchor=tk.CENTER)
-        self.cart_tree.column("Ilosc sztuk", width=10, anchor=tk.CENTER)
-        self.cart_tree.column("Cena/szt", width=50, anchor=tk.CENTER)
-        self.cart_tree.column("Wartosc", width=50, anchor=tk.CENTER)
+        self.cart_tree.column("Srednica", width=60, anchor=tk.CENTER)
+        self.cart_tree.column("fiChwyt", width=60, anchor=tk.CENTER)
+        self.cart_tree.column("Ilosc zebow", width=50, anchor=tk.CENTER)
+        self.cart_tree.column("Ilosc sztuk", width=80, anchor=tk.CENTER)
+        self.cart_tree.column("ciecie", width=50, anchor=tk.CENTER)
+        self.cart_tree.column("Cena/szt", width=80, anchor=tk.CENTER)
+        self.cart_tree.column("Wartosc", width=80, anchor=tk.CENTER)
         self.cart_tree.column("Powlekanie", width=100, anchor=tk.CENTER)
+        self.cart_tree.column("L", width=60, anchor=tk.CENTER)
+        self.cart_tree.column("Cena powlekania/szt", width=100, anchor=tk.CENTER)
+        self.cart_tree.column("Wartosc powlekania", width=100, anchor=tk.CENTER)
+        self.cart_tree.column("Uwagi", width=100, anchor=tk.CENTER)
 
         # Suwak pionowy
         v_scrollbar = ttk.Scrollbar(tree_scroll_frame, orient=tk.VERTICAL, command=self.cart_tree.yview)
@@ -187,11 +206,11 @@ class ToolPricingApp:
         tk.Button(button_frame, text="Edytuj wybraną pozycję", command=self.edit_selected).pack(side=tk.LEFT, padx=5)
 
         # Etykiety sum
-        self.suma_uslug_label = tk.Label(self.right_frame, text="Suma usług: 0.00 zł")
+        self.suma_uslug_label = tk.Label(self.right_frame, text="Suma usług: 0.00 PLN")
         self.suma_uslug_label.pack(pady=5)
-        self.suma_powlekanie_label = tk.Label(self.right_frame, text="Suma powlekanie: 0.00 zł")
+        self.suma_powlekanie_label = tk.Label(self.right_frame, text="Suma powlekanie: 0.00 PLN")
         self.suma_powlekanie_label.pack(pady=5)
-        self.suma_total_label = tk.Label(self.right_frame, text="Suma: 0.00 zł", font=("Arial", 12, "bold"))
+        self.suma_total_label = tk.Label(self.right_frame, text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
         self.suma_total_label.pack(pady=5)
 
         # Inicjalizacja koszyka
@@ -254,22 +273,30 @@ class ToolPricingApp:
         for idx, item in enumerate(self.cart.items):
             name = item['params'].get('Typ', item['name'])
             srednica = item['params'].get('Srednica', '')
+            fi_chwyt = item['params'].get('fiChwyt', '')
             ilosc_zebow = item['params'].get('Ilosc ostrzy', '')
             ilosc_sztuk = item['quantity']
-            cena_szt = format_price(item['sharpening_price'])
-            wartosc = format_price(item['sharpening_price'] * ilosc_sztuk)
-            powlekanie = format_price(item['coating_price'] * ilosc_sztuk) if item['coating_price'] > 0 else "-"
-            self.cart_tree.insert("", tk.END, iid=str(idx), values=(name, srednica, ilosc_zebow, ilosc_sztuk, cena_szt, wartosc, powlekanie))
+            ciecie = item['params'].get('ciecie', '-')
+            cena_szt = format_price(item['sharpening_price'] + item.get('cutting_price', 0.0))
+            wartosc = format_price((item['sharpening_price'] + item.get('cutting_price', 0.0)) * ilosc_sztuk)
+            powlekanie = item['params'].get('Powloka', 'BRAK')
+            dlugosc = item['params'].get('Długość całkowita', '')
+            cena_powlekania_szt = format_price(item['coating_price']) if item['coating_price'] > 0 else "-"
+            wartosc_powlekania = format_price(item['coating_price'] * ilosc_sztuk) if item['coating_price'] > 0 else "-"
+            uwagi = item['params'].get('Uwagi', '-')
+            self.cart_tree.insert("", tk.END, iid=str(idx), values=(
+                idx + 1, name, srednica, fi_chwyt, ilosc_zebow, ilosc_sztuk, ciecie,
+                cena_szt, wartosc, powlekanie, dlugosc, cena_powlekania_szt, wartosc_powlekania, uwagi))
 
         # Obliczanie sum
-        suma_uslug = sum(item['sharpening_price'] * item['quantity'] for item in self.cart.items)
+        suma_uslug = sum((item['sharpening_price'] + item.get('cutting_price', 0.0)) * item['quantity'] for item in self.cart.items)
         suma_powlekanie = sum(item['coating_price'] * item['quantity'] for item in self.cart.items if item['coating_price'] > 0)
         suma_total = suma_uslug + suma_powlekanie
 
         # Aktualizacja etykiet
-        self.suma_uslug_label.config(text=f"Suma usług: {format_price(suma_uslug)} zł")
-        self.suma_powlekanie_label.config(text=f"Suma powlekanie: {format_price(suma_powlekanie)} zł")
-        self.suma_total_label.config(text=f"Suma: {format_price(suma_total)} zł")
+        self.suma_uslug_label.config(text=f"Suma usług: {format_price(suma_uslug)} PLN")
+        self.suma_powlekanie_label.config(text=f"Suma powlekanie: {format_price(suma_powlekanie)} PLN")
+        self.suma_total_label.config(text=f"Suma: {format_price(suma_total)} PLN")
 
 if __name__ == "__main__":
     root = tk.Tk()

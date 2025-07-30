@@ -30,17 +30,24 @@ class FrezyMenu(ToolMenu):
 
         # Wypełnienie pól w trybie edycji
         if self.edit_index is not None:
-            edit_item = cart.items[self.edit_index]
-            self.type_var.set(edit_item['params'].get('Typ', ''))
-            self.diameter_var.set(edit_item['params'].get('Srednica', ''))
+            edit_item = self.cart.items[self.edit_index]
+            self.type_var.set(edit_item['params'].get('Typ', 'Frez prosty'))
+            self.diameter_var.set(edit_item['params'].get('Srednica', '12'))
             z_value = edit_item['params'].get('Ilosc ostrzy', '4')
             self.z_var.set(z_value)
             self.quantity_var.set(str(edit_item['quantity']))
-            powloka = edit_item['params'].get('Powloka', 'BRAK')
-            if powloka != 'BRAK':
+            self.chwyt_var.set(edit_item['params'].get('fiChwyt', '12'))
+            self.ciecie_var.set(True if edit_item['params'].get('ciecie', '-') == '+' else False)
+            powloka = edit_item['params'].get('Powloka', '')
+            if powloka:
                 self.powlekanie_menu.coating_var.set(powloka)
                 self.powlekanie_menu.length_var.set(edit_item['params'].get('Długość całkowita', ''))
-                self.powlekanie_menu.toggle_coating_options()
+                self.powlekanie_menu.coating_frame.pack(after=self.powlekanie_menu.coating_button, pady=5)
+                self.powlekanie_menu.coating_combo.pack(side="left", padx=5)
+                self.powlekanie_menu.length_combo.pack(side="left", padx=5)
+                self.powlekanie_menu.coating_price_frame.pack(after=self.coating_frame, pady=5)
+                self.powlekanie_menu.coating_price_label.pack()
+                self.powlekanie_menu.coating_button.config(bg="lightgreen", relief="sunken")
             self.add_button.config(text="Zapisz zmiany")
             # Aktualizacja stylu przycisków ostrzy w trybie edycji
             z_options = ["1", "2", "3", "4", "5", "6"]
@@ -101,10 +108,6 @@ class FrezyMenu(ToolMenu):
             return max_upper_range[2]
         return 0.0
 
-    def _calculate_total_price(self, price, coating_price, quantity):
-        """Oblicza całkowitą wartość: (cena jednostkowa * ilość) + (cena powłoki * ilość)."""
-        return (price * quantity) + (coating_price * quantity)
-
     def update_price(self, event=None):
         """Aktualizuje cenę na podstawie wybranych parametrów i ilości sztuk."""
         try:
@@ -115,12 +118,13 @@ class FrezyMenu(ToolMenu):
             quantity = validate_positive_int(self.quantity_var.get())
 
             if not (selected_type and selected_diameter and selected_z):
-                self.price_label.config(text="Cena ostrzenia: 0.00 PLN")
-                self.powlekanie_menu.coating_price_label.config(text="Cena powloki: 0.00 PLN")
+                self.price_label.config(text="Cena jednostkowa: 0.00 PLN")
+                self.powlekanie_menu.coating_price_label.config(text="Cena powłoki: 0.00 PLN")
                 self.total_price_label.config(text="Wartość: 0.00 PLN")
+                print("Brak parametrów: typ, średnica lub ilość ostrzy")
                 return
 
-            price = 0.0
+            sharpening_price = 0.0
             type_data = self.pricing_data.get(selected_type, {})
             try:
                 z_value = float(selected_z)
@@ -128,9 +132,10 @@ class FrezyMenu(ToolMenu):
                     z_key = "2-4"
                 else:
                     if not z_value.is_integer():
-                        self.price_label.config(text="Cena ostrzenia: Błąd")
-                        self.powlekanie_menu.coating_price_label.config(text="Cena powloki: Błąd")
+                        self.price_label.config(text="Cena jednostkowa: Błąd")
+                        self.powlekanie_menu.coating_price_label.config(text="Cena powłoki: Błąd")
                         self.total_price_label.config(text="Wartość: Błąd")
+                        print("Błąd: Ilość ostrzy nie jest liczbą całkowitą")
                         return
                     z_key = "pozostale"
             except (ValueError, TypeError):
@@ -140,28 +145,31 @@ class FrezyMenu(ToolMenu):
             for item in z_data.get("cennik", []):
                 if item["zakres_srednicy"] == selected_diameter:
                     prices = item["ceny"]
-                    price = self.get_price_for_quantity(prices, quantity)
+                    sharpening_price = self.get_price_for_quantity(prices, quantity)
                     break
             else:
-                price = 0.0
+                sharpening_price = 0.0
 
             coating_price = self.powlekanie_menu.get_coating_price(diameter_input)
-            total_price = self._calculate_total_price(price, coating_price, quantity)
+            cutting_price = 0.0
+            if self.ciecie_var.get():
+                cutting_price = self.get_cutting_price(diameter_input)
 
-            self.price_label.config(text=f"Cena ostrzenia: {format_price(price)}")
-            self.powlekanie_menu.coating_price_label.config(text=f"Cena powloki: {format_price(coating_price)}")
+            unit_price = sharpening_price + cutting_price
+            total_price = self._calculate_total_price(sharpening_price, cutting_price, coating_price, quantity)
+
+            self.price_label.config(text=f"Cena jednostkowa: {format_price(unit_price)}")
+            self.powlekanie_menu.coating_price_label.config(text=f"Cena powłoki: {format_price(coating_price)}")
             self.total_price_label.config(text=f"Wartość: {format_price(total_price)}")
             display_z = selected_z if selected_z != "2-4" else z_key
-            coating_display = self.powlekanie_menu.coating_var.get() if coating_price > 0.0 else "BRAK"
-            if coating_price > 0.0:
-                print(f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {price} Powloka: {coating_display} {format_price(coating_price)}")
-            else:
-                print(f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {price} Powloka: {coating_display}")
+            coating_display = self.powlekanie_menu.coating_var.get() or "BRAK"
+            ciecie_display = "+" if self.ciecie_var.get() else "-"
+            print(f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {sharpening_price} Cięcie: {ciecie_display} Powłoka: {coating_display}")
         except Exception as e:
-            self.price_label.config(text="Cena ostrzenia: Błąd")
-            self.powlekanie_menu.coating_price_label.config(text="Cena powloki: Błąd")
+            self.price_label.config(text="Cena jednostkowa: Błąd")
+            self.powlekanie_menu.coating_price_label.config(text="Cena powłoki: Błąd")
             self.total_price_label.config(text="Wartość: Błąd")
-            print("Błąd w update_price:", str(e))
+            print(f"Błąd w update_price: {str(e)}")
 
     def add_to_cart(self):
         """Dodaje lub aktualizuje pozycję w koszyku."""
@@ -177,7 +185,7 @@ class FrezyMenu(ToolMenu):
                 print("Błąd: Brak parametrów w add_to_cart", selected_type, diameter_input, selected_diameter, selected_z)
                 return
 
-            price = 0.0
+            sharpening_price = 0.0
             type_data = self.pricing_data.get(selected_type, {})
             try:
                 z_value = float(selected_z)
@@ -196,13 +204,18 @@ class FrezyMenu(ToolMenu):
             for item in z_data.get("cennik", []):
                 if item["zakres_srednicy"] == selected_diameter:
                     prices = item["ceny"]
-                    price = self.get_price_for_quantity(prices, quantity)
+                    sharpening_price = self.get_price_for_quantity(prices, quantity)
                     break
             else:
-                price = 0.0
+                sharpening_price = 0.0
 
             coating_price = self.powlekanie_menu.get_coating_price(diameter_input)
-            if price == 0.0 and coating_price == 0.0:
+            coating_name = self.powlekanie_menu.coating_var.get() or "BRAK"
+            cutting_price = 0.0
+            if self.ciecie_var.get():
+                cutting_price = self.get_cutting_price(diameter_input)
+
+            if sharpening_price == 0.0 and coating_price == 0.0 and cutting_price == 0.0:
                 messagebox.showerror("Błąd", "Nie znaleziono ceny dla wybranych parametrów.")
                 print("Błąd: Cena = 0 w add_to_cart")
                 return
@@ -212,25 +225,27 @@ class FrezyMenu(ToolMenu):
                 "Srednica": diameter_input,
                 "Zakres srednicy": selected_diameter,
                 "Ilosc ostrzy": selected_z,
-                "Ilosc sztuk": quantity
+                "fiChwyt": self.chwyt_var.get(),
+                "ciecie": "+" if self.ciecie_var.get() else "-",
+                "Ilosc sztuk": quantity,
+                "Uwagi": "-",
+                "Powloka": coating_name
             }
             coating_params = self.powlekanie_menu.get_coating_params()
             if coating_price > 0.0:
-                params["Powloka"] = coating_params.get("Powloka", "BRAK")
                 params["Długość całkowita"] = coating_params.get("Długość całkowita", "")
                 params["Cena powloki"] = format_price(coating_price)
-            else:
-                params["Powloka"] = "BRAK"
 
             if self.edit_index is None:
-                self.cart.add_item("Frezy", params, quantity, price, coating_price)
+                self.cart.add_item("Frezy", params, quantity, sharpening_price, cutting_price, coating_price)
                 messagebox.showinfo("Sukces", f"Dodano {quantity} szt. {selected_type} (srednica: {diameter_input} mm) do koszyka.")
             else:
                 self.cart.items[self.edit_index] = {
                     'name': "Frezy",
                     'params': params,
                     'quantity': quantity,
-                    'sharpening_price': price,
+                    'sharpening_price': sharpening_price,
+                    'cutting_price': cutting_price,
                     'coating_price': coating_price
                 }
                 messagebox.showinfo("Sukces", "Zaktualizowano pozycję w koszyku.")
@@ -240,11 +255,9 @@ class FrezyMenu(ToolMenu):
                 self.main_app.update_cart_display()
 
             display_z = selected_z if selected_z != "2-4" else z_key
-            coating_display = params["Powloka"] if coating_price > 0.0 else "BRAK"
-            if coating_price > 0.0:
-                print(f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {price} Powloka: {coating_display} {format_price(coating_price)}")
-            else:
-                print(f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {price} Powloka: {coating_display}")
+            coating_display = coating_name
+            ciecie_display = "+" if self.ciecie_var.get() else "-"
+            print(f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {sharpening_price} Cięcie: {ciecie_display} Powłoka: {coating_display}")
         except Exception as e:
             messagebox.showerror("Błąd", "Wystąpił błąd podczas dodawania do koszyka.")
-            print("Błąd w add_to_cart:", str(e))
+            print(f"Błąd w add_to_cart: {str(e)}")
