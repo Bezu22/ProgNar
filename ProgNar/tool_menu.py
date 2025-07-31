@@ -38,7 +38,7 @@ class ToolMenu:
         self.top.geometry("500x700")
 
         # Typ narzędzia
-        tk.Label(self.top, text="Wybierz typ:", font=("Arial", 12)).pack(pady=10)
+        tk.Label(self.top, text="Wybierz typ:", font=("Arial", 12)).pack(pady=5)
         self.type_buttons = {}
         button_frame = tk.Frame(self.top)
         button_frame.pack(pady=5)
@@ -47,27 +47,29 @@ class ToolMenu:
                             command=lambda t=json_name: self.select_type(t))
             btn.pack(side="left", padx=5)
             self.type_buttons[json_name] = btn
+        self.add_separator(self.top)
 
-        # Średnica i średnica chwytu w jednej linii
+        # Średnica i średnica chwytu
         diameter_frame = tk.Frame(self.top)
         diameter_frame.pack(pady=5)
         tk.Label(diameter_frame, text="Średnica (mm):", font=("Arial", 12)).pack(side="left", padx=5)
         self.diameter_buttons = {}
         diameter_buttons_frame = tk.Frame(diameter_frame)
-        diameter_buttons_frame.pack(side="left", pady=5)
+        diameter_buttons_frame.pack(pady=5)
         for display_name, value in diameter_options:
             btn = tk.Button(diameter_buttons_frame, text=display_name, width=6,
                             command=lambda v=value: self.select_diameter(v))
-            btn.pack(side="left", padx=5)
+            btn.pack(side="left", padx=2)
             self.diameter_buttons[value] = btn
 
         self.diameter_entry = tk.Entry(diameter_frame, textvariable=self.diameter_var, width=10)
-        self.diameter_entry.pack(side="left", padx=5)
+        self.diameter_entry.pack(side="left", padx=25)
         self.diameter_entry.bind("<KeyRelease>", self.on_diameter_entry_change)
 
         tk.Label(diameter_frame, text="φ Chwytu:", font=("Arial", 12)).pack(side="left", padx=5)
         self.chwyt_entry = tk.Entry(diameter_frame, textvariable=self.chwyt_var, width=10)
         self.chwyt_entry.pack(side="left", padx=5)
+        self.add_separator(self.top)
 
         # Ilość ostrzy
         tk.Label(self.top, text="Wybierz ilość ostrzy:", font=("Arial", 12)).pack(pady=5)
@@ -78,7 +80,7 @@ class ToolMenu:
         for z in z_options:
             btn = tk.Button(self.z_frame, text=z, width=6,
                             command=lambda v=z: self.select_z(v))
-            btn.pack(side="left", padx=5)
+            btn.pack(side="left", padx=2)
             self.z_buttons[z] = btn
             btn.config(bg="lightgreen" if z == "4" else "SystemButtonFace",
                        relief="sunken" if z == "4" else "raised")
@@ -86,8 +88,9 @@ class ToolMenu:
         self.z_entry = tk.Entry(self.top, textvariable=self.z_var, width=10)
         self.z_entry.pack(pady=5)
         self.z_entry.bind("<KeyRelease>", self.on_z_entry_change)
+        self.add_separator(self.top)
 
-        # Ilość sztuk i cięcie w jednej linii
+        # Ilość sztuk i cięcie
         quantity_frame = tk.Frame(self.top)
         quantity_frame.pack(pady=5)
         tk.Label(quantity_frame, text="Ilość sztuk:", font=("Arial", 12)).pack(side="left", padx=5)
@@ -97,20 +100,18 @@ class ToolMenu:
 
         self.ciecie_check = tk.Checkbutton(quantity_frame, text="Cięcie", variable=self.ciecie_var, command=self.update_price)
         self.ciecie_check.pack(side="left", padx=5)
+        self.add_separator(self.top)
 
         # Menu powlekania
         self.powlekanie_menu = PowlekanieMenu(self.top, self.update_price)
+        self.add_separator(self.top)
 
-        # Etykieta ceny jednostkowej (uwzględnia cięcie)
+        # Etykiety cen
         self.price_label = tk.Label(self.top, text="Cena jednostkowa: 0.00 PLN", font=("Arial", 10))
-        self.price_label.pack(pady=10)
-
-        # Etykieta ceny powlekania
-        self.powlekanie_menu.coating_price_label.pack(pady=10)
-
-        # Etykieta wartości całkowitej
+        self.price_label.pack(pady=5)
+        self.powlekanie_menu.coating_price_label.pack(pady=5)
         self.total_price_label = tk.Label(self.top, text="Wartość: 0.00 PLN", font=("Arial", 12, "bold"))
-        self.total_price_label.pack(pady=10)
+        self.total_price_label.pack(pady=5)
 
         # Przyciski akcji
         self.add_button = tk.Button(self.top, text="Dodaj do koszyka", font=("Arial", 12), command=self.add_to_cart)
@@ -133,6 +134,11 @@ class ToolMenu:
             btn.config(bg="lightgreen" if json_name == type_name else "SystemButtonFace",
                        relief="sunken" if json_name == type_name else "raised")
         self.update_price()
+
+    def add_separator(self, parent, color="#f21821", thickness=1, pady=10):
+        """Dodaje wizualny separator"""
+        separator = tk.Frame(parent, bg=color, height=thickness)
+        separator.pack(fill="x", pady=pady)
 
     def select_diameter(self, diameter):
         """Ustawia wybraną średnicę i aktualizuje styl przycisków."""

@@ -32,28 +32,33 @@ class FrezyMenu(ToolMenu):
         if self.edit_index is not None:
             edit_item = self.cart.items[self.edit_index]
             self.type_var.set(edit_item['params'].get('Typ', 'Frez prosty'))
-            self.diameter_var.set(edit_item['params'].get('Srednica', '12'))
+            diameter = edit_item['params'].get('Srednica', '12')
+            self.diameter_var.set(diameter)
+            self.diameter_entry.delete(0, tk.END)
+            self.diameter_entry.insert(0, diameter)
             z_value = edit_item['params'].get('Ilosc ostrzy', '4')
             self.z_var.set(z_value)
+            self.z_entry.delete(0, tk.END)
+            self.z_entry.insert(0, z_value)
             self.quantity_var.set(str(edit_item['quantity']))
             self.chwyt_var.set(edit_item['params'].get('fiChwyt', '12'))
             self.ciecie_var.set(True if edit_item['params'].get('ciecie', '-') == '+' else False)
-            powloka = edit_item['params'].get('Powloka', '')
-            if powloka:
-                self.powlekanie_menu.coating_var.set(powloka)
+            powloka = edit_item['params'].get('Powloka', 'BRAK')
+            self.powlekanie_menu.coating_var.set(powloka)
+            if powloka != 'BRAK':
                 self.powlekanie_menu.length_var.set(edit_item['params'].get('Długość całkowita', ''))
-                self.powlekanie_menu.coating_frame.pack(after=self.powlekanie_menu.coating_button, pady=5)
-                self.powlekanie_menu.coating_combo.pack(side="left", padx=5)
-                self.powlekanie_menu.length_combo.pack(side="left", padx=5)
-                self.powlekanie_menu.coating_price_frame.pack(after=self.coating_frame, pady=5)
-                self.powlekanie_menu.coating_price_label.pack()
-                self.powlekanie_menu.coating_button.config(bg="lightgreen", relief="sunken")
+                self.powlekanie_menu.toggle_coating_options()  # Pokaz ramkę powlekania
             self.add_button.config(text="Zapisz zmiany")
-            # Aktualizacja stylu przycisków ostrzy w trybie edycji
-            z_options = ["1", "2", "3", "4", "5", "6"]
+            # Aktualizacja stylu przycisków
+            for json_name, btn in self.type_buttons.items():
+                btn.config(bg="lightgreen" if json_name == self.type_var.get() else "SystemButtonFace",
+                           relief="sunken" if json_name == self.type_var.get() else "raised")
+            for value, btn in self.diameter_buttons.items():
+                btn.config(bg="lightgreen" if value == diameter else "SystemButtonFace",
+                           relief="sunken" if value == diameter else "raised")
             for z, btn in self.z_buttons.items():
-                btn.config(bg="lightgreen" if z == z_value and z_value in z_options else "SystemButtonFace",
-                           relief="sunken" if z == z_value and z_value in z_options else "raised")
+                btn.config(bg="lightgreen" if z == z_value else "SystemButtonFace",
+                           relief="sunken" if z == z_value else "raised")
 
         self.update_price()
 
@@ -232,9 +237,10 @@ class FrezyMenu(ToolMenu):
                 "Powloka": coating_name
             }
             coating_params = self.powlekanie_menu.get_coating_params()
-            if coating_price > 0.0:
+            if coating_name != "BRAK":
                 params["Długość całkowita"] = coating_params.get("Długość całkowita", "")
-                params["Cena powloki"] = format_price(coating_price)
+                if coating_price > 0.0:
+                    params["Cena powloki"] = format_price(coating_price)
 
             if self.edit_index is None:
                 self.cart.add_item("Frezy", params, quantity, sharpening_price, cutting_price, coating_price)

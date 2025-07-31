@@ -16,7 +16,7 @@ class CoatingMenu:
         self.parent = parent
         self.update_callback = update_callback
         self.coating_data = load_pricing_data("data/cennik_powloki.json")
-        self.coating_options = list(self.coating_data.keys()) + ["BRAK"]
+        self.coating_options = ["BRAK"] + list(self.coating_data.keys())
         self.length_options = []
         for coating in self.coating_data.values():
             for diameter_range in coating.get("zakres_srednicy", []):
@@ -24,12 +24,12 @@ class CoatingMenu:
                     length = str(length_item["dlugosc"])
                     if length not in self.length_options:
                         self.length_options.append(length)
-        self.length_options.sort(key=int)
+        self.length_options.sort(key=lambda x: int(x))
 
         # Przycisk Powłoka
         self.coating_button = tk.Button(parent, text="Powłoka", font=("Arial", 12),
                                        command=self.toggle_coating_options)
-        self.coating_button.pack(pady=1)
+        self.coating_button.pack(pady=5)
 
         # Kontener na opcje powłoki
         self.coating_frame = tk.Frame(self.parent)
@@ -53,18 +53,22 @@ class CoatingMenu:
             self.coating_var.set("BRAK")
             self.length_var.set("")
             self.coating_price_label.config(text="Cena powłoki: 0.00 PLN")
+            self.length_combo["values"] = []
         else:
             self.coating_frame.pack(after=self.coating_button, pady=5)
+            self.coating_price_frame.pack(after=self.coating_frame, pady=5)
             self.coating_button.config(bg="lightgreen", relief="sunken")
             self.coating_combo["values"] = self.coating_options
             self.length_combo["values"] = self.length_options if self.length_options else ["Brak danych"]
-            self.coating_var.set("BRAK")
-            if self.length_options:
-                self.length_var.set(self.length_options[0])
+            self.coating_var.set(self.coating_options[1] if len(self.coating_options) > 1 else "BRAK")
+            self.length_var.set(self.length_options[0] if self.length_options else "")
             self.coating_combo.pack(side="left", padx=5)
             self.length_combo.pack(side="left", padx=5)
-            self.coating_price_frame.pack(after=self.coating_frame, pady=5)
             self.coating_price_label.pack()
+            if self.coating_var.get() == "BRAK":
+                self.length_combo.config(state="disabled")
+            else:
+                self.length_combo.config(state="readonly")
         self.update_callback()
 
     def on_selection_change(self, event=None):
@@ -72,8 +76,10 @@ class CoatingMenu:
         if self.coating_var.get() == "BRAK":
             self.length_var.set("")
             self.length_combo["values"] = []
+            self.length_combo.config(state="disabled")
         else:
             self.length_combo["values"] = self.length_options if self.length_options else ["Brak danych"]
+            self.length_combo.config(state="readonly")
             if self.length_options and not self.length_var.get():
                 self.length_var.set(self.length_options[0])
         self.update_callback()
