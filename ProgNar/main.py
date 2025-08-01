@@ -124,7 +124,7 @@ class ToolPricingApp:
                 height=50
             ).pack()
         except AttributeError:
-            tk.Button(uslugi_frame, text="Usługi", font=("Arial", 14), command=self.show_uslugi_menu, width=15).pack()
+            tk.Button(uszlugi_frame, text="Usługi", font=("Arial", 14), command=self.show_uslugi_menu, width=15).pack()
 
         # Przycisk Wyjście
         tk.Button(self.left_frame, text="Wyjście", font=("Arial", 14), command=self.root.quit).pack(pady=20)
@@ -222,7 +222,7 @@ class ToolPricingApp:
         self.suma_total_label.pack(pady=5)
 
         # Inicjalizacja koszyka
-        self.update_cart_display()
+        self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
 
     def edit_client_name(self, event=None):
         """Otwiera okno do edycji nazwy klienta."""
@@ -267,66 +267,14 @@ class ToolPricingApp:
         CennikiMenu()
 
     def delete_selected(self):
-        """Usuwa wybraną pozycję z koszyka."""
-        selected = self.cart_tree.selection()
-        if selected:
-            index = self.cart_tree.index(selected[0])
-            self.cart.remove_item(index)
-            self.update_cart_display()
+        """Usuwa wybraną pozycję z koszyka i aktualizuje widok."""
+        if self.cart.delete_selected(self.cart_tree):
+            self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
 
     def edit_selected(self):
-        """Otwiera menu edycji dla wybranej pozycji."""
-        selected = self.cart_tree.selection()
-        if selected:
-            index = int(selected[0])  # iid to str(idx)
-            item = self.cart.items[index]
-            if item['name'] == "Frezy":
-                FrezyMenu(self.root, self.cart, main_app=self, edit_index=index)
-            elif item['name'] == "Wiertła":
-                WiertlaMenu(self.root, self.cart, main_app=self, edit_index=index)
-            elif item['name'] == "Pozostałe":
-                PozostaleMenu(self.root, self.cart, main_app=self, edit_index=index)
-            elif item['name'] == "Usługi":
-                UslugiMenu(self.root, self.cart, main_app=self, edit_index=index)
-            else:
-                messagebox.showwarning("Błąd", "Nieznany typ pozycji.")
-        else:
-            messagebox.showwarning("Błąd", "Nie wybrano żadnej pozycji.")
-
-    def update_cart_display(self):
-        """Aktualizuje wyświetlanie koszyka."""
-        # Czyszczenie tabeli
-        for item in self.cart_tree.get_children():
-            self.cart_tree.delete(item)
-
-        # Wypełnianie tabeli
-        for idx, item in enumerate(self.cart.items):
-            name = item['params'].get('Typ', item['name'])
-            srednica = item['params'].get('Srednica', '')
-            fi_chwyt = item['params'].get('fiChwyt', '')
-            ilosc_zebow = item['params'].get('Ilosc ostrzy', '')
-            ilosc_sztuk = item['quantity']
-            ciecie = item['params'].get('ciecie', '-')
-            cena_szt = format_price(item['sharpening_price'] + item.get('cutting_price', 0.0))
-            wartosc = format_price((item['sharpening_price'] + item.get('cutting_price', 0.0)) * ilosc_sztuk)
-            powlekanie = item['params'].get('Powloka', 'BRAK')
-            dlugosc = item['params'].get('Długość całkowita', '')
-            cena_powlekania_szt = format_price(item['coating_price']) if item['coating_price'] > 0 else "-"
-            wartosc_powlekania = format_price(item['coating_price'] * ilosc_sztuk) if item['coating_price'] > 0 else "-"
-            uwagi = item['params'].get('Uwagi', '-')
-            self.cart_tree.insert("", tk.END, iid=str(idx), values=(
-                idx + 1, name, srednica, fi_chwyt, ilosc_zebow, ilosc_sztuk, ciecie,
-                cena_szt, wartosc, powlekanie, dlugosc, cena_powlekania_szt, wartosc_powlekania, uwagi))
-
-        # Obliczanie sum
-        suma_uslug = sum((item['sharpening_price'] + item.get('cutting_price', 0.0)) * item['quantity'] for item in self.cart.items)
-        suma_powlekanie = sum(item['coating_price'] * item['quantity'] for item in self.cart.items if item['coating_price'] > 0)
-        suma_total = suma_uslug + suma_powlekanie
-
-        # Aktualizacja etykiet
-        self.suma_uslug_label.config(text=f"Suma usług: {format_price(suma_uslug)} PLN")
-        self.suma_powlekanie_label.config(text=f"Suma powlekanie: {format_price(suma_powlekanie)} PLN")
-        self.suma_total_label.config(text=f"Suma: {format_price(suma_total)} PLN")
+        """Otwiera menu edycji dla wybranej pozycji i aktualizuje widok."""
+        if self.cart.edit_selected(self.cart_tree, self.root, self):
+            self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
 
 if __name__ == "__main__":
     root = tk.Tk()
