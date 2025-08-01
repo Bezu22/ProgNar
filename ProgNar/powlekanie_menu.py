@@ -2,7 +2,8 @@
 
 import tkinter as tk
 from tkinter import ttk
-from utils import load_pricing_data, format_price
+from ProgNar.config.utils import load_pricing_data
+
 
 class CoatingMenu:
     """Klasa obsługująca wybór powłoki i długości całkowitej."""

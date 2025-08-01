@@ -1,14 +1,15 @@
 # main.py - Główny moduł aplikacji z menu głównym i koszykiem
 
 import tkinter as tk
+
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from cart import Cart
-from frezy_menu import FrezyMenu
-from wiertla_menu import WiertlaMenu
-from pozostale_menu import PozostaleMenu
-from uslugi_menu import UslugiMenu
-from utils import format_price
+from tools_menu.frezy_menu import FrezyMenu
+from tools_menu.wiertla_menu import WiertlaMenu
+from ProgNar.tools_menu.pozostale_menu import PozostaleMenu
+from ProgNar.tools_menu.uslugi_menu import UslugiMenu
+from ProgNar.config.utils import format_price
 from cenniki import CennikiMenu
 
 class ToolPricingApp:
