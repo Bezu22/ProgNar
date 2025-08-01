@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
 from tools_menu.tool_menu import ToolMenu
-from config.utils import load_pricing_data, format_price, validate_positive_int, validate_blades,get_price_for_quantity
+from config.utils import load_pricing_data, format_price, validate_positive_int, validate_blades, get_price_for_quantity
 from config.ui_utils import update_button_styles
+from config.cart_io import save_cart_to_file
 from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z
 
 class FrezyMenu(ToolMenu):
@@ -20,6 +21,7 @@ class FrezyMenu(ToolMenu):
                          FREZY_TYPES[0][1], FREZY_DIAMETER_OPTIONS[0][1], FREZY_Z_OPTIONS, FREZY_DEFAULT_Z)
         self.main_app = main_app
         self.edit_index = edit_index
+        self.top.attributes('-topmost', True)  # Okno zawsze na wierzchu
 
         # Wypełnienie pól w trybie edycji
         if self.edit_index is not None:
@@ -154,7 +156,7 @@ class FrezyMenu(ToolMenu):
                     params["Cena powloki"] = format_price(coating_price)
 
             if self.edit_index is None:
-                self.cart.add_item("Frezy", params, quantity, sharpening_price, cutting_price, coating_price)
+                self.cart.add_item("Frezy", params, quantity, sharpening_price, cutting_price, coating_price, main_app=self.main_app)
                 messagebox.showinfo("Sukces", f"Dodano {quantity} szt. {selected_type} (srednica: {diameter_input} mm) do koszyka.")
             else:
                 self.cart.items[self.edit_index] = {
@@ -165,11 +167,18 @@ class FrezyMenu(ToolMenu):
                     'cutting_price': cutting_price,
                     'coating_price': coating_price
                 }
+                if self.main_app:
+                    save_cart_to_file(self.cart, self.main_app.client_name)  # Zapis do pliku tymczasowego po edycji
                 messagebox.showinfo("Sukces", "Zaktualizowano pozycję w koszyku.")
                 self.top.destroy()
 
             if self.main_app:
-                self.main_app.update_cart_display()
+                self.main_app.cart.update_cart_display(self.main_app.cart_tree,
+                                                      self.main_app.suma_uslug_label,
+                                                      self.main_app.suma_powlekanie_label,
+                                                      self.main_app.suma_total_label)
+                if self.edit_index is None:
+                    self.top.focus_force()  # Przywraca fokus na okno FrezyMenu po dodaniu
 
             display_z = selected_z if selected_z != "2-4" else z_key
             coating_display = coating_name

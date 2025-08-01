@@ -4,12 +4,14 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from cart import Cart
+from config.cart_io import save_cart_to_file, save_cart_to_file_with_dialog, load_cart_from_file, load_cart_from_file_with_dialog, clear_temp_cart
 from tools_menu.frezy_menu import FrezyMenu
 from tools_menu.wiertla_menu import WiertlaMenu
 from tools_menu.pozostale_menu import PozostaleMenu
 from tools_menu.uslugi_menu import UslugiMenu
 from config.utils import format_price
 from cenniki import CennikiMenu
+from config.pdf_report import generate_pdf
 
 class ToolPricingApp:
     """Główna klasa aplikacji z menu głównym i koszykiem."""
@@ -28,6 +30,9 @@ class ToolPricingApp:
 
         # Zmienna przechowująca nazwę klienta
         self.client_name = tk.StringVar(value="- -")
+
+        # Wczytanie koszyka z pliku tymczasowego
+        load_cart_from_file(self.cart, self.client_name)
 
         # Lewa ramka dla menu
         self.left_frame = tk.Frame(self.root, width=450, bg="lightgrey")
@@ -124,7 +129,7 @@ class ToolPricingApp:
                 height=50
             ).pack()
         except AttributeError:
-            tk.Button(uszlugi_frame, text="Usługi", font=("Arial", 14), command=self.show_uslugi_menu, width=15).pack()
+            tk.Button(uslugi_frame, text="Usługi", font=("Arial", 14), command=self.show_uslugi_menu, width=15).pack()
 
         # Przycisk Wyjście
         tk.Button(self.left_frame, text="Wyjście", font=("Arial", 14), command=self.root.quit).pack(pady=20)
@@ -160,7 +165,7 @@ class ToolPricingApp:
 
         # Tabela koszyka
         columns = ("LP", "Nazwa", "Srednica", "fiChwyt", "Ilosc zebow", "Ilosc sztuk", "ciecie", "Cena/szt", "Wartosc", "Powlekanie", "L", "Cena powlekania/szt", "Wartosc powlekania", "Uwagi")
-        self.cart_tree = ttk.Treeview(tree_scroll_frame, columns=columns, show="headings")
+        self.cart_tree = ttk.Treeview(tree_scroll_frame, columns=columns, show="headings", height=10)
         self.cart_tree.heading("LP", text="L.P.")
         self.cart_tree.heading("Nazwa", text="Nazwa")
         self.cart_tree.heading("Srednica", text="φOD")
@@ -207,19 +212,38 @@ class ToolPricingApp:
         tree_scroll_frame.grid_rowconfigure(0, weight=1)
         tree_scroll_frame.grid_columnconfigure(0, weight=1)
 
-        # Przyciski
-        button_frame = tk.Frame(self.right_frame)
-        button_frame.pack(pady=10)
-        tk.Button(button_frame, text="Usuń wybraną pozycję", command=self.delete_selected).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text="Edytuj wybraną pozycję", command=self.edit_selected).pack(side=tk.LEFT, padx=5)
+        # Ramka dla przycisków i sum pod tabelą
+        bottom_frame = tk.Frame(self.right_frame)
+        bottom_frame.pack(fill=tk.X, pady=10)
+
+        # Lewa ramka dla przycisków Wyczyść, Zapisz, Wczytaj
+        left_button_frame = tk.Frame(bottom_frame)
+        left_button_frame.pack(side=tk.LEFT, padx=10)
+
+        tk.Button(left_button_frame, text="Wyczyść koszyk", command=self.clear_cart, width=20).pack(pady=5)
+        save_load_frame = tk.Frame(left_button_frame)
+        save_load_frame.pack(pady=5)
+        tk.Button(save_load_frame, text="Zapisz koszyk", command=self.save_cart, width=10).pack(side=tk.LEFT, padx=2)
+        tk.Button(save_load_frame, text="Wczytaj koszyk", command=self.load_cart, width=10).pack(side=tk.LEFT, padx=2)
+
+        # Prawa ramka dla przycisków Usuń, Edytuj i sum
+        right_button_frame = tk.Frame(bottom_frame)
+        right_button_frame.pack(side=tk.RIGHT, padx=10)
+
+
+        tk.Button(right_button_frame, text="Usuń wybraną pozycję", command=self.delete_selected).pack(side=tk.LEFT, padx=5)
+        tk.Button(right_button_frame, text="Edytuj wybraną pozycję", command=self.edit_selected).pack(side=tk.LEFT, padx=5)
+
 
         # Etykiety sum
-        self.suma_uslug_label = tk.Label(self.right_frame, text="Suma usług: 0.00 PLN")
+        self.suma_uslug_label = tk.Label(right_button_frame, text="Suma usług: 0.00 PLN")
         self.suma_uslug_label.pack(pady=5)
-        self.suma_powlekanie_label = tk.Label(self.right_frame, text="Suma powlekanie: 0.00 PLN")
+        self.suma_powlekanie_label = tk.Label(right_button_frame, text="Suma powlekanie: 0.00 PLN")
         self.suma_powlekanie_label.pack(pady=5)
-        self.suma_total_label = tk.Label(self.right_frame, text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
+        self.suma_total_label = tk.Label(right_button_frame, text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
         self.suma_total_label.pack(pady=5)
+        tk.Button(right_button_frame, text="RAPORT", command=self.generate_pdf_report, width=20, bg="red", fg="white",
+                  font=("Arial", 12, "bold")).pack(pady=10)
 
         # Inicjalizacja koszyka
         self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
@@ -241,6 +265,7 @@ class ToolPricingApp:
             new_name = self.client_name.get().strip()
             if not new_name:
                 self.client_name.set("- -")  # Ustawia myślnik, jeśli nazwa jest pusta
+            save_cart_to_file(self.cart, self.client_name)  # Zapisuje nazwę klienta do pliku tymczasowego
             edit_window.destroy()
 
         tk.Button(edit_window, text="Zapisz", command=save_name).pack(pady=5)
@@ -268,13 +293,41 @@ class ToolPricingApp:
 
     def delete_selected(self):
         """Usuwa wybraną pozycję z koszyka i aktualizuje widok."""
-        if self.cart.delete_selected(self.cart_tree):
+        if self.cart.delete_selected(self.cart_tree, main_app=self):
             self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
 
     def edit_selected(self):
         """Otwiera menu edycji dla wybranej pozycji i aktualizuje widok."""
         if self.cart.edit_selected(self.cart_tree, self.root, self):
             self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
+
+    def clear_cart(self):
+        """Czyści koszyk, plik tymczasowy i aktualizuje widok."""
+        if len(self.cart.items) > 0:
+            if not messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz wyczyścić koszyk?"):
+                return
+        self.cart.clear_cart(main_app=self)
+        clear_temp_cart()
+        self.client_name.set("- -")  # Resetuje nazwę klienta
+        self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label,
+                                      self.suma_total_label)
+
+    def save_cart(self):
+        """Zapisuje koszyk do pliku z wyborem lokalizacji."""
+        save_cart_to_file_with_dialog(self.cart, self.client_name, self.root)
+
+    def load_cart(self):
+        """Wczytuje koszyk z pliku z wyborem lokalizacji i aktualizuje widok."""
+        if len(self.cart.items) > 0:
+            if not messagebox.askyesno("Potwierdzenie", "Wczytanie koszyka spowoduje utratę aktualnego. Kontynuować?"):
+                return
+        if load_cart_from_file_with_dialog(self.cart, self.client_name, self.root):
+            self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
+            save_cart_to_file(self.cart, self.client_name)  # Zapis do pliku tymczasowego
+
+    def generate_pdf_report(self):
+        """Inicjalizuje generowanie raportu PDF."""
+        generate_pdf(self.cart, self.client_name)
 
 if __name__ == "__main__":
     root = tk.Tk()
