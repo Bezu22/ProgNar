@@ -1,15 +1,14 @@
 # main.py - Główny moduł aplikacji z menu głównym i koszykiem
 
 import tkinter as tk
-
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from cart import Cart
 from tools_menu.frezy_menu import FrezyMenu
 from tools_menu.wiertla_menu import WiertlaMenu
-from ProgNar.tools_menu.pozostale_menu import PozostaleMenu
-from ProgNar.tools_menu.uslugi_menu import UslugiMenu
-from ProgNar.config.utils import format_price
+from tools_menu.pozostale_menu import PozostaleMenu
+from tools_menu.uslugi_menu import UslugiMenu
+from config.utils import format_price
 from cenniki import CennikiMenu
 
 class ToolPricingApp:
@@ -23,9 +22,12 @@ class ToolPricingApp:
         # Inicjalizacja głównego okna
         self.root = root
         self.root.title("ProgNar – System Regeneracji i Wyceny Narzędzi")
-        self.root.geometry("1200x500")  # Rozszerzone okno
+        self.root.geometry("1500x500")  # Stały rozmiar okna
 
         self.cart = Cart()
+
+        # Zmienna przechowująca nazwę klienta
+        self.client_name = tk.StringVar(value="- -")
 
         # Lewa ramka dla menu
         self.left_frame = tk.Frame(self.root, width=450, bg="lightgrey")
@@ -147,6 +149,11 @@ class ToolPricingApp:
         self.right_frame = tk.Frame(self.root, width=750)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
+        # Tytuł tabeli (nazwa klienta)
+        self.client_label = tk.Label(self.right_frame, textvariable=self.client_name, font=("Arial", 14, "bold"), fg="black")
+        self.client_label.pack(pady=5)
+        self.client_label.bind("<Button-1>", self.edit_client_name)
+
         # Ramka dla tabeli i suwaków
         tree_scroll_frame = tk.Frame(self.right_frame, borderwidth=1, relief="solid")
         tree_scroll_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -216,6 +223,28 @@ class ToolPricingApp:
 
         # Inicjalizacja koszyka
         self.update_cart_display()
+
+    def edit_client_name(self, event=None):
+        """Otwiera okno do edycji nazwy klienta."""
+        edit_window = tk.Toplevel(self.root)
+        edit_window.title("Edytuj nazwę klienta")
+        edit_window.geometry("300x150")
+        edit_window.transient(self.root)  # Okno powiązane z głównym
+        edit_window.grab_set()  # Blokuje interakcję z głównym oknem
+
+        tk.Label(edit_window, text="Nazwa klienta:", font=("Arial", 12)).pack(pady=10)
+        entry = tk.Entry(edit_window, textvariable=self.client_name, width=30)
+        entry.pack(pady=5)
+        entry.focus_set()
+
+        def save_name():
+            new_name = self.client_name.get().strip()
+            if not new_name:
+                self.client_name.set("- -")  # Ustawia myślnik, jeśli nazwa jest pusta
+            edit_window.destroy()
+
+        tk.Button(edit_window, text="Zapisz", command=save_name).pack(pady=5)
+        entry.bind("<Return>", lambda e: save_name())  # Enter zapisuje nazwę
 
     def show_frezy_menu(self):
         """Otwiera menu frezów."""
