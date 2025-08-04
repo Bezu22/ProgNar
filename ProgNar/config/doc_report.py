@@ -1,101 +1,170 @@
 import json
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from tkinter import filedialog
 from datetime import datetime
 
 def generate_report():
-    # Wczytaj dane z pliku JSON
     json_path = "data/temp_cart.json"
     with open(json_path, encoding='utf-8') as f:
         data = json.load(f)
 
-    # Otwórz okno wyboru ścieżki zapisu
     save_path = filedialog.asksaveasfilename(
         defaultextension=".docx",
         filetypes=[("Dokument Word", "*.docx")],
         title="Zapisz raport jako"
     )
-
     if not save_path:
-        print("Zapis anulowany przez użytkownika.")
+        print("Zapis anulowany.")
         return
 
     doc = Document()
 
-    # Styl domyślny
+    # Ustaw minimalne marginesy
+    section = doc.sections[0]
+    section.top_margin = Inches(1)
+    section.bottom_margin = Inches(1)
+    section.left_margin = Inches(0.3)
+    section.right_margin = Inches(0.3)
+    total_width_cm = 21.0 - 0.6 * 2  # A4 szerokość - marginesy boczne
+
+    # Czcionka
     style = doc.styles['Normal']
-    font = style.font
-    font.name = 'Calibri'
-    font.size = Pt(10)
+    style.font.name = 'Calibri'
+    style.font.size = Pt(6)
 
-    # Nagłówek
-    doc.add_heading('Wycena', 0)
-    doc.add_paragraph(f'Data: {datetime.today().strftime("%d.%m.%Y")}')
-    doc.add_paragraph(f'Nazwa klienta: {data.get("client_name", "-")}')
-    doc.add_paragraph("")  # odstęp
+    # Dodajemy dzisiejszą datę przed nazwą firmy
+    today = datetime.today().strftime("%d.%m.%Y")
+    date_para = doc.add_paragraph()
+    date_run = date_para.add_run(f"Świdnica, {today}")
+    date_run.font.size = Pt(8)
 
-    # Tabela - nagłówki
+    # Górny wiersz z nazwą klienta i logo
+    top_table = doc.add_table(rows=1, cols=2)
+
+    # Komórka z nazwą klienta
+    client_cell = top_table.cell(0, 0)
+    client_para = client_cell.paragraphs[0]
+    client_run = client_para.add_run(data.get("client_name", "--"))
+    client_run.bold = True
+    client_run.font.size = Pt(14)  # większy rozmiar czcionki dla nazwy klienta
+
+    # Dodanie dwóch kolejnych linii
+    for _ in range(2):
+        client_cell.add_paragraph("..........................................................")
+
+    logo_cell = top_table.cell(0, 1)
+    logo_para = logo_cell.paragraphs[0]
+    logo_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    try:
+        logo_para.add_run().add_picture("img/logo.png", width=Inches(2))
+    except:
+        logo_para.add_run("Brak logo")
+
+    doc.add_paragraph()
+
+    # Tabela danych
     headers = [
-        "L.P.", "Typ", "Średnica", "Ø Trzonka", "L [mm]", "Ilość ostrzy", "Cięcie",
-        "Ilość szt.", "Cena ostrzenia", "Wartość ostrzenia",
-        "Powłoka", "Cena powłoki", "Wartość powłoki", "Cena cięcia", "Wartość cięcia", "Uwagi"
+        "L.P.", "Typ", "Ø OD", "Ø Chw.", "L [mm]",
+        "Ilość ostrzy", "Cięcie", "Ilość szt.",
+        "Cena ostrzenia", "Wartość ostrzenia",
+        "Powłoka", "Cena powłoki", "Wartość powłoki", "Uwagi"
     ]
-
     table = doc.add_table(rows=1, cols=len(headers))
     table.style = 'Table Grid'
-    hdr_cells = table.rows[0].cells
-    for i, h in enumerate(headers):
-        hdr_cells[i].text = h
+    table.autofit = False
 
-    # Sumy
+    # Wyznaczenie szerokości kolumn
+    fixed_widths_cm = {
+        0: 0.8,
+        1: 2.0,
+        2: 1.0,
+        3: 1.0,
+        4: 1.0,
+        5: 1.0,
+        6: 1.0,
+        7: 1.0
+    }
+    remaining_columns = list(range(8, 14))  # pozostałe
+    used_width = sum(fixed_widths_cm.values())
+    remaining_width = total_width_cm - used_width
+    equal_width = remaining_width / len(remaining_columns)
+
+    column_widths_cm = {}
+    column_widths_cm.update(fixed_widths_cm)
+    for i in remaining_columns:
+        column_widths_cm[i] = equal_width
+
+    # Nagłówki
+    for i, header in enumerate(headers):
+        cell = table.rows[0].cells[i]
+        cell.text = header
+        cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Dane
+    sum_qty = 0
     sum_sharpening = 0
-    sum_cutting = 0
     sum_coating = 0
 
-    # Tabela - dane
     for i, item in enumerate(data['items'], start=1):
         p = item['params']
         qty = item['quantity']
-        sharpening = item['sharpening_price']
-        cutting = item['cutting_price']
-        coating = item['coating_price']
+        sharpen = item['sharpening_price']
+        coat = item['coating_price']
 
-        total_sharpening = sharpening * qty
-        total_cutting = cutting * qty
-        total_coating = coating * qty
+        val_sharpen = sharpen * qty
+        val_coat = coat * qty
 
-        sum_sharpening += total_sharpening
-        sum_cutting += total_cutting
-        sum_coating += total_coating
+        sum_qty += qty
+        sum_sharpening += val_sharpen
+        sum_coating += val_coat
 
-        row_cells = table.add_row().cells
-        row_cells[0].text = str(i)
-        row_cells[1].text = p.get("Typ", "-")
-        row_cells[2].text = p.get("Srednica", "-")
-        row_cells[3].text = p.get("fiChwyt", "-")
-        row_cells[4].text = p.get("Długość całkowita", "-") if "Długość całkowita" in p else "-"
-        row_cells[5].text = p.get("Ilosc ostrzy", "-")
-        row_cells[6].text = p.get("ciecie", "-")
-        row_cells[7].text = str(qty)
-        row_cells[8].text = f"{sharpening:.2f} PLN"
-        row_cells[9].text = f"{total_sharpening:.2f} PLN"
-        row_cells[10].text = p.get("Powloka", "-")
-        row_cells[11].text = f"{coating:.2f} PLN" if coating else "-"
-        row_cells[12].text = f"{total_coating:.2f} PLN" if coating else "-"
-        row_cells[13].text = f"{cutting:.2f} PLN" if cutting else "-"
-        row_cells[14].text = f"{total_cutting:.2f} PLN" if cutting else "-"
-        row_cells[15].text = ""  # Placeholder na uwagi
+        row = table.add_row().cells
+        values = [
+            str(i), p.get("Typ", "-"), p.get("Srednica", "-"),
+            p.get("fiChwyt", "-"), p.get("Długość całkowita", "-"),
+            p.get("Ilosc ostrzy", "-"), p.get("ciecie", "-"), str(qty),
+            f"{sharpen:.2f} PLN", f"{val_sharpen:.2f} PLN",
+            p.get("Powloka", "-"), f"{coat:.2f} PLN" if coat else "-",
+            f"{val_coat:.2f} PLN" if coat else "-", ""
+        ]
 
-    doc.add_paragraph("")  # odstęp
+        for col, val in enumerate(values):
+            cell = row[col]
+            para = cell.paragraphs[0]
+            para.text = val
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Podsumowanie
-    doc.add_paragraph("Podsumowanie kosztów:")
-    doc.add_paragraph(f"• Suma ostrzenia: {sum_sharpening:.2f} PLN")
-    doc.add_paragraph(f"• Suma cięcia: {sum_cutting:.2f} PLN")
-    doc.add_paragraph(f"• Suma powlekania: {sum_coating:.2f} PLN")
-    doc.add_paragraph(f"• Wartość całkowita: {sum_sharpening + sum_cutting + sum_coating:.2f} PLN")
+    # Pusta linia
+    table.add_row()
 
-    # Zapisz plik
+    # Rząd podsumowań
+    summary_row = table.add_row().cells
+    summary_row[7].text = str(sum_qty)
+    summary_row[9].text = f"{sum_sharpening:.2f} PLN"
+    summary_row[12].text = f"{sum_coating:.2f} PLN"
+
+    for i in [7, 9, 12]:
+        summary_row[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Rząd łącznej sumy
+    total_row = table.add_row().cells
+    total_label_cell = total_row[11]
+    total_label_cell.text = "Suma:"
+    total_label_cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+    total_value_cell = total_row[12]
+    total_value_cell.text = f"{sum_sharpening + sum_coating:.2f} PLN"
+    total_value_cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Ustawienia szerokości kolumn
+    for i, col in enumerate(table.columns):
+        width_cm = column_widths_cm.get(i, 1.5)  # Domyślna szerokość 1.5 cm, jeśli nie określono
+        try:
+            col.width = Inches(width_cm / 2.54)  # Ustaw szerokość kolumny, a nie pojedynczych komórek
+        except Exception as e:
+            print(f"Błąd przy ustawianiu szerokości kolumny {i}: {str(e)}")
+
     doc.save(save_path)
     print(f"Raport zapisany: {save_path}")
