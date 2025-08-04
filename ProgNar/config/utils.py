@@ -39,10 +39,10 @@ def get_price_for_quantity(ceny_dict, quantity):
     for key, price in ceny_dict.items():
         try:
             if "-" in key:
-                lower, upper = map(int, key.split("-"))
+                lower, upper = map(float, key.split("-"))
                 ranges.append((lower, upper, price))
             else:
-                single = int(key)
+                single = float(key)
                 ranges.append((single, single, price))
         except ValueError:
             continue

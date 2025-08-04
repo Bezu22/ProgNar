@@ -3,6 +3,7 @@ from powlekanie_menu import CoatingMenu as PowlekanieMenu
 from tools_menu.blades_menu import BladesMenu
 from config.utils import load_pricing_data, format_price, validate_positive_int, add_separator
 from config.ui_utils import update_button_styles
+import os
 
 class ToolMenu:
     """Bazowa klasa dla menu narzędzi (frezy, wiertła itp.)."""
@@ -25,7 +26,8 @@ class ToolMenu:
         self.parent = parent
         self.cart = cart
         self.pricing_data = load_pricing_data(json_file)
-        self.uslugi_data = load_pricing_data('../data/cennik_uslugi.json')
+        self.uslugi_data = load_pricing_data(os.path.join(os.path.dirname(__file__), '../data/cennik_uslugi.json'))
+        print(f"uslugi_data: {self.uslugi_data}")  # Debugowanie
 
         # Inicjalizacja zmiennych
         self.type_var = tk.StringVar(value=default_type)
@@ -69,7 +71,11 @@ class ToolMenu:
 
         self.diameter_entry = tk.Entry(diameter_frame, textvariable=self.diameter_var, width=10)
         self.diameter_entry.pack(side="left", padx=5)
+        tk.Label(diameter_frame, text="Średnica chwytu (mm):", font=("Arial", 12)).pack(side="left", padx=5)
+        self.chwyt_entry = tk.Entry(diameter_frame, textvariable=self.chwyt_var, width=10)
+        self.chwyt_entry.pack(side="left", padx=5)
         self.diameter_entry.bind("<KeyRelease>", self.on_diameter_entry_change)
+        self.chwyt_entry.bind("<KeyRelease>", self.on_chwyt_entry_change)
         add_separator(self.top)
 
         # Ilość ostrzy
@@ -104,6 +110,16 @@ class ToolMenu:
         self.add_button.pack(pady=5)
         tk.Button(self.top, text="Zamknij", font=("Arial", 12), command=self.top.destroy).pack(pady=5)
 
+        self.update_price()
+
+    def on_chwyt_entry_change(self, event=None):
+        """Waliduje wprowadzoną wartość średnicy chwytu."""
+        try:
+            chwyt = float(self.chwyt_var.get())
+            if chwyt <= 0:
+                self.chwyt_var.set("12")
+        except ValueError:
+            self.chwyt_var.set("12")
         self.update_price()
 
     def map_diameter_to_range(self, diameter):
@@ -213,12 +229,18 @@ class ToolMenu:
         try:
             diam_float = float(diameter)
             if diam_float <= 12.0:
-                return self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("1 - 12", 0.0)
+                price = self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("1 - 12", 0.0)
+                print(f"Średnica: {diam_float}, cena cięcia (1 - 12): {price}")
+                return price
             elif 12.1 <= diam_float <= 50.0:
-                return self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("12.1 - 50", 0.0)
+                price = self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("12.1 - 50", 0.0)
+                print(f"Średnica: {diam_float}, cena cięcia (12.1 - 50): {price}")
+                return price
             else:
+                print(f"Średnica: {diam_float}, cena cięcia: 0.0 (poza zakresem)")
                 return 0.0
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            print(f"Błąd w get_cutting_price: {str(e)}")
             return 0.0
 
     def _calculate_total_price(self, sharpening_price, cutting_price, coating_price, quantity):

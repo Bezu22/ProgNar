@@ -1,23 +1,30 @@
-# config/cart_io.py - Funkcje do zapisu i wczytywania koszyka
-
 import json
+import os
 from tkinter import messagebox, filedialog
 
-def save_cart_to_file(cart, client_name, filename="temp_cart.json"):
+
+def save_cart_to_file(cart, client_name, filename=None):
     """Zapisuje dane koszyka i nazwę klienta do pliku JSON."""
+    if filename is None:
+        filename = os.path.join(os.path.dirname(__file__), '../data/temp_cart.json')
+
     try:
+        # Upewnij się, że folder data/ istnieje
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
         data = {
             "client_name": client_name.get() if client_name else "- -",
             "items": cart.items
         }
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-        if filename == "temp_cart.json":
+        if filename.endswith("temp_cart.json"):
             print(f"Zapisano koszyk do pliku tymczasowego: {filename}")
         return True
     except Exception as e:
-        messagebox.showerror("Błąd", f"Nie udało się zapisać koszyka: {e}")
+        messagebox.showerror("Błąd", f"Nie udało się zapisać koszyka: {str(e)}")
         return False
+
 
 def save_cart_to_file_with_dialog(cart, client_name, parent):
     """Zapisuje koszyk i nazwę klienta do pliku JSON z wyborem lokalizacji."""
@@ -30,8 +37,12 @@ def save_cart_to_file_with_dialog(cart, client_name, parent):
         return save_cart_to_file(cart, client_name, filename)
     return False
 
-def load_cart_from_file(cart, client_name, filename="temp_cart.json"):
+
+def load_cart_from_file(cart, client_name, filename=None):
     """Wczytuje dane koszyka i nazwę klienta z pliku JSON."""
+    if filename is None:
+        filename = os.path.join(os.path.dirname(__file__), '../data/temp_cart.json')
+
     try:
         with open(filename, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -45,6 +56,7 @@ def load_cart_from_file(cart, client_name, filename="temp_cart.json"):
         messagebox.showerror("Błąd", f"Nie udało się wczytać koszyka: {e}")
         return False
 
+
 def load_cart_from_file_with_dialog(cart, client_name, parent):
     """Wczytuje koszyk i nazwę klienta z pliku JSON z wyborem lokalizacji."""
     filename = filedialog.askopenfilename(
@@ -55,9 +67,16 @@ def load_cart_from_file_with_dialog(cart, client_name, parent):
         return load_cart_from_file(cart, client_name, filename)
     return False
 
-def clear_temp_cart(filename="temp_cart.json"):
+
+def clear_temp_cart(filename=None):
     """Czyści plik tymczasowy koszyka."""
+    if filename is None:
+        filename = os.path.join(os.path.dirname(__file__), '../data/temp_cart.json')
+
     try:
+        # Upewnij się, że folder data/ istnieje
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump({"client_name": "- -", "items": []}, f)  # Zapisuje pustą listę i domyślną nazwę klienta
         return True

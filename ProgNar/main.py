@@ -11,7 +11,7 @@ from tools_menu.pozostale_menu import PozostaleMenu
 from tools_menu.uslugi_menu import UslugiMenu
 from config.utils import format_price
 from cenniki import CennikiMenu
-from config.pdf_report import generate_pdf
+from config.doc_report import generate_report
 
 class ToolPricingApp:
     """Główna klasa aplikacji z menu głównym i koszykiem."""
@@ -242,7 +242,7 @@ class ToolPricingApp:
         self.suma_powlekanie_label.pack(pady=5)
         self.suma_total_label = tk.Label(right_button_frame, text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
         self.suma_total_label.pack(pady=5)
-        tk.Button(right_button_frame, text="RAPORT", command=self.generate_pdf_report, width=20, bg="red", fg="white",
+        tk.Button(right_button_frame, text="RAPORT", command=self.generate_report, width=20, bg="red", fg="white",
                   font=("Arial", 12, "bold")).pack(pady=10)
 
         # Inicjalizacja koszyka
@@ -325,9 +325,9 @@ class ToolPricingApp:
             self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
             save_cart_to_file(self.cart, self.client_name)  # Zapis do pliku tymczasowego
 
-    def generate_pdf_report(self):
+    def generate_report(self):
         """Inicjalizuje generowanie raportu PDF."""
-        generate_pdf(self.cart, self.client_name)
+        generate_report()
 
 if __name__ == "__main__":
     root = tk.Tk()
