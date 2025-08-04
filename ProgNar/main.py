@@ -9,8 +9,7 @@ from tools_menu.frezy_menu import FrezyMenu
 from tools_menu.wiertla_menu import WiertlaMenu
 from tools_menu.pozostale_menu import PozostaleMenu
 from tools_menu.uslugi_menu import UslugiMenu
-from config.utils import format_price
-from cenniki import CennikiMenu
+from config.cenniki import CennikiMenu
 from config.doc_report import generate_report
 from config.utils import resource_path
 

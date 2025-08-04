@@ -1,12 +1,10 @@
 import tkinter as tk
-from powlekanie_menu import CoatingMenu as PowlekanieMenu
+from tools_menu.powlekanie_menu import CoatingMenu as PowlekanieMenu
 from tools_menu.blades_menu import BladesMenu
-from config.utils import load_pricing_data, format_price, validate_positive_int, add_separator
+from config.utils import load_pricing_data, add_separator
 from config.ui_utils import update_button_styles
 from config.utils import resource_path
-from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z,FREZY_DEFAULT_DIAMETER
-
-import os
+from config.config import FREZY_DEFAULT_DIAMETER
 
 
 class ToolMenu:

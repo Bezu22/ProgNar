@@ -14,8 +14,8 @@ class CennikiMenu:
     }
 
     def __init__(self):
-        if not os.path.exists("data"):
-            os.makedirs("data")
+        if not os.path.exists("../data"):
+            os.makedirs("../data")
         self.create_main_window()
 
     def load_json(self, file_path):
