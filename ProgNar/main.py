@@ -12,6 +12,7 @@ from tools_menu.uslugi_menu import UslugiMenu
 from config.utils import format_price
 from cenniki import CennikiMenu
 from config.doc_report import generate_report
+from config.utils import resource_path
 
 class ToolPricingApp:
     """Główna klasa aplikacji z menu głównym i koszykiem."""
@@ -48,11 +49,11 @@ class ToolPricingApp:
         # Przygotowanie obrazów dla przycisków
         try:
             # Wczytanie i przeskalowanie obrazów
-            mill_img = Image.open("img/mill.jpg").resize((50, 50), Image.Resampling.LANCZOS)
-            drill_img = Image.open("img/drill.jpg").resize((50, 50), Image.Resampling.LANCZOS)
-            special_img = Image.open("img/special.jpg").resize((150, 50), Image.Resampling.LANCZOS)
-            uslugi_img = Image.open("img/uslugi.png").resize((120, 40), Image.Resampling.LANCZOS)
-            logo_img = Image.open("img/logo.png").resize((150, 50), Image.Resampling.LANCZOS)
+            mill_img = Image.open(resource_path("img/mill.jpg")).resize((50, 50), Image.Resampling.LANCZOS)
+            drill_img = Image.open(resource_path("img/drill.jpg")).resize((50, 50), Image.Resampling.LANCZOS)
+            special_img = Image.open(resource_path("img/special.jpg")).resize((150, 50), Image.Resampling.LANCZOS)
+            uslugi_img = Image.open(resource_path("img/uslugi.png")).resize((120, 40), Image.Resampling.LANCZOS)
+            logo_img = Image.open(resource_path("img/logo.png")).resize((150, 50), Image.Resampling.LANCZOS)
             self.mill_photo = ImageTk.PhotoImage(mill_img)
             self.drill_photo = ImageTk.PhotoImage(drill_img)
             self.special_photo = ImageTk.PhotoImage(special_img)

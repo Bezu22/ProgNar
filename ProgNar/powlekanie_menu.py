@@ -2,7 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
-from ProgNar.config.utils import load_pricing_data
+from config.utils import load_pricing_data
 
 
 class CoatingMenu:

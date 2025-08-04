@@ -1,9 +1,10 @@
 # pozostale_menu.py - Moduł menu dla pozostałych pozycji
 
+
 import tkinter as tk
 from tkinter import ttk, messagebox
-from ProgNar.config.utils import load_pricing_data, format_price, validate_positive_int
-
+from config.utils import load_pricing_data, format_price, validate_positive_int
+from config.utils import resource_path
 
 class PozostaleMenu:
     """Klasa obsługująca menu pozostałych pozycji."""
@@ -18,7 +19,7 @@ class PozostaleMenu:
         self.parent = parent
         self.cart = cart
         # Wczytywanie danych z JSON
-        self.pricing_data = load_pricing_data("../data/cennik_pozostale.json")
+        self.pricing_data = load_pricing_data(resource_path("../data/cennik_pozostale.json"))
 
         # Tworzenie okna menu
         self.top = tk.Toplevel(parent)

@@ -1,12 +1,13 @@
 import json
 import os
 from tkinter import messagebox, filedialog
+from config.utils import resource_path
 
 
 def save_cart_to_file(cart, client_name, filename=None):
     """Zapisuje dane koszyka i nazwę klienta do pliku JSON."""
     if filename is None:
-        filename = os.path.join(os.path.dirname(__file__), '../data/temp_cart.json')
+        filename = os.path.join(os.path.dirname(__file__), resource_path("../data/temp_cart.json"))
 
     try:
         # Upewnij się, że folder data/ istnieje
@@ -41,7 +42,7 @@ def save_cart_to_file_with_dialog(cart, client_name, parent):
 def load_cart_from_file(cart, client_name, filename=None):
     """Wczytuje dane koszyka i nazwę klienta z pliku JSON."""
     if filename is None:
-        filename = os.path.join(os.path.dirname(__file__), '../data/temp_cart.json')
+        filename = os.path.join(os.path.dirname(__file__), resource_path("../data/temp_cart.json"))
 
     try:
         with open(filename, 'r', encoding='utf-8') as f:
@@ -71,7 +72,7 @@ def load_cart_from_file_with_dialog(cart, client_name, parent):
 def clear_temp_cart(filename=None):
     """Czyści plik tymczasowy koszyka."""
     if filename is None:
-        filename = os.path.join(os.path.dirname(__file__), '../data/temp_cart.json')
+        filename = os.path.join(os.path.dirname(__file__), resource_path("../data/temp_cart.json"))
 
     try:
         # Upewnij się, że folder data/ istnieje

@@ -3,12 +3,16 @@ from powlekanie_menu import CoatingMenu as PowlekanieMenu
 from tools_menu.blades_menu import BladesMenu
 from config.utils import load_pricing_data, format_price, validate_positive_int, add_separator
 from config.ui_utils import update_button_styles
+from config.utils import resource_path
+from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z,FREZY_DEFAULT_DIAMETER
+
 import os
+
 
 class ToolMenu:
     """Bazowa klasa dla menu narzędzi (frezy, wiertła itp.)."""
 
-    def __init__(self, parent, cart, title, json_file, types, diameter_options, default_type, default_diameter, z_options=["1", "2", "3", "4", "5", "6"], default_z="4"):
+    def __init__(self, parent, cart, title, json_file, types, diameter_options, default_type, default_diameter=FREZY_DEFAULT_DIAMETER, z_options=["1", "2", "3", "4", "5", "6"], default_z="4"):
         """
         Inicjalizuje menu narzędzia.
         Args:
@@ -26,7 +30,7 @@ class ToolMenu:
         self.parent = parent
         self.cart = cart
         self.pricing_data = load_pricing_data(json_file)
-        self.uslugi_data = load_pricing_data(os.path.join(os.path.dirname(__file__), '../data/cennik_uslugi.json'))
+        self.uslugi_data = load_pricing_data(resource_path("data/cennik_uslugi.json"))
         print(f"uslugi_data: {self.uslugi_data}")  # Debugowanie
 
         # Inicjalizacja zmiennych

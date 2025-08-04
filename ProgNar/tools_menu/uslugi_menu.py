@@ -2,7 +2,8 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from ProgNar.config.utils import load_pricing_data, format_price, validate_positive_int
+from config.utils import load_pricing_data, format_price, validate_positive_int
+from config.utils import resource_path
 
 
 class UslugiMenu:
@@ -18,7 +19,7 @@ class UslugiMenu:
         self.parent = parent
         self.cart = cart
         # Wczytywanie danych z JSON
-        self.pricing_data = load_pricing_data("../data/cennik_uslugi.json")
+        self.pricing_data = load_pricing_data(resource_path("../data/cennik_uslugi.json"))
 
         # Tworzenie okna menu
         self.top = tk.Toplevel(parent)

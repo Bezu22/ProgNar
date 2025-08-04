@@ -1,5 +1,7 @@
 import json
 import tkinter as tk
+import os
+import sys
 
 def load_pricing_data(file_path):
     """Wczytuje dane cennika z pliku JSON."""
@@ -68,3 +70,16 @@ def validate_blades(z_value, default="2-4"):
         return default
     except (ValueError, TypeError):
         return default
+
+def resource_path(relative_path):
+    """
+    Zwraca poprawną ścieżkę do zasobu:
+    - w .py — względna
+    - w .exe (PyInstaller) — tymczasowy katalog sys._MEIPASS
+    """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)

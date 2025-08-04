@@ -2,14 +2,15 @@ import tkinter as tk
 from tkinter import messagebox
 import json
 import os
+from config.utils import resource_path
 
 class CennikiMenu:
     JSON_FILES = {
-        "Frezy": "data/cennik_frezy.json",
-        "Wiertła": "data/cennik_wiertla.json",
-        "Pozostałe": "data/cennik_pozostale.json",
-        "Usługi": "data/cennik_uslugi.json",
-        "Powłoki": "data/cennik_powloki.json"
+        "Frezy": resource_path("data/cennik_frezy.json"),
+        "Wiertła": resource_path("data/cennik_wiertla.json"),
+        "Pozostałe": resource_path("data/cennik_pozostale.json"),
+        "Usługi": resource_path("data/cennik_uslugi.json"),
+        "Powłoki": resource_path("data/cennik_powloki.json")
     }
 
     def __init__(self):

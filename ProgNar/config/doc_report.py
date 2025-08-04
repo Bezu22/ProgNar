@@ -4,9 +4,10 @@ from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from tkinter import filedialog
 from datetime import datetime
+from config.utils import resource_path
 
 def generate_report():
-    json_path = "data/temp_cart.json"
+    json_path = resource_path("data/temp_cart.json")
     with open(json_path, encoding='utf-8') as f:
         data = json.load(f)
 
@@ -58,7 +59,7 @@ def generate_report():
     logo_para = logo_cell.paragraphs[0]
     logo_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     try:
-        logo_para.add_run().add_picture("img/logo.png", width=Inches(2))
+        logo_para.add_run().add_picture(resource_path("img/logo.png"), width=Inches(2))
     except:
         logo_para.add_run("Brak logo")
 

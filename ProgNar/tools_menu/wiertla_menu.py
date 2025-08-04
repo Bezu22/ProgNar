@@ -4,6 +4,7 @@ from tools_menu.tool_menu import ToolMenu
 from config.utils import load_pricing_data, format_price, validate_positive_int,get_price_for_quantity
 from config.ui_utils import update_button_styles
 from config.config import WIERTLA_TYPES, WIERTLA_DIAMETER_OPTIONS, WIERTLA_Z_OPTIONS, WIERTLA_DEFAULT_Z
+from config.utils import resource_path
 
 class WiertlaMenu(ToolMenu):
     """Klasa obsługująca menu wierteł, dziedzicząca po ToolMenu."""
@@ -16,7 +17,7 @@ class WiertlaMenu(ToolMenu):
             main_app: Referencja do głównej aplikacji.
             edit_index: Indeks edytowanej pozycji w koszyku (lub None).
         """
-        super().__init__(parent, cart, "Menu wierteł", "../data/cennik_wiertla.json", WIERTLA_TYPES, WIERTLA_DIAMETER_OPTIONS,
+        super().__init__(parent, cart, "Menu wierteł", resource_path("../data/cennik_wiertla.json"), WIERTLA_TYPES, WIERTLA_DIAMETER_OPTIONS,
                          WIERTLA_TYPES[0][1], WIERTLA_DIAMETER_OPTIONS[0][1], WIERTLA_Z_OPTIONS, WIERTLA_DEFAULT_Z)
         self.main_app = main_app
         self.edit_index = edit_index
