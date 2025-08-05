@@ -11,7 +11,7 @@
                 "fiChwyt": "12",
                 "ciecie": "+",
                 "Ilosc sztuk": 5,
-                "Uwagi": "-",
+                "Uwagi": "Mocne zuzycie",
                 "Powloka": "ALCRONA PRO/LATUMA",
                 "Długość całkowita": "100",
                 "Cena powloki": "27.98 PLN"
@@ -51,7 +51,7 @@
                 "fiChwyt": "8",
                 "ciecie": "+",
                 "Ilosc sztuk": 10,
-                "Uwagi": "-",
+                "Uwagi": "Dwa ciecia",
                 "Powloka": "ALCRONA PRO/LATUMA",
                 "Długość całkowita": "100",
                 "Cena powloki": "16.14 PLN"
@@ -108,16 +108,54 @@
                 "Ilosc ostrzy": "3",
                 "fiChwyt": "8",
                 "ciecie": "+",
-                "Ilosc sztuk": 3,
+                "Ilosc sztuk": 5,
                 "Uwagi": "-",
                 "Powloka": "ALCRONA PRO/LATUMA",
-                "Długość całkowita": "150",
-                "Cena powloki": "19.38 PLN"
+                "Długość całkowita": "100",
+                "Cena powloki": "16.14 PLN"
             },
-            "quantity": 3,
-            "sharpening_price": 59.9,
+            "quantity": 5,
+            "sharpening_price": 52.7,
             "cutting_price": 12.0,
-            "coating_price": 19.38
+            "coating_price": 16.14
+        },
+        {
+            "name": "Frezy",
+            "params": {
+                "Typ": "Frez prosty",
+                "Srednica": "8",
+                "Zakres srednicy": "6.1 - 10.0",
+                "Ilosc ostrzy": "4",
+                "fiChwyt": "8",
+                "ciecie": "+",
+                "Ilosc sztuk": 15,
+                "Uwagi": "-",
+                "Powloka": "BRAK"
+            },
+            "quantity": 15,
+            "sharpening_price": 37.5,
+            "cutting_price": 12.0,
+            "coating_price": 0.0
+        },
+        {
+            "name": "Frezy",
+            "params": {
+                "Typ": "Frez prosty",
+                "Srednica": "12",
+                "Zakres srednicy": "10.1 - 12.0",
+                "Ilosc ostrzy": "4",
+                "fiChwyt": "12",
+                "ciecie": "-",
+                "Ilosc sztuk": 1,
+                "Uwagi": "-",
+                "Powloka": "Azotek Cyrkonu (ZrN)",
+                "Długość całkowita": "100",
+                "Cena powloki": "26.72 PLN"
+            },
+            "quantity": 1,
+            "sharpening_price": 62.4,
+            "cutting_price": 0.0,
+            "coating_price": 26.72
         }
     ]
 }

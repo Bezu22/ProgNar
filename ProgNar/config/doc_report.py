@@ -128,7 +128,7 @@ def generate_report():
             p.get("Ilosc ostrzy", "-"), p.get("ciecie", "-"), str(qty),
             f"{sharpen:.2f} PLN", f"{val_sharpen:.2f} PLN",
             p.get("Powloka", "-"), f"{coat:.2f} PLN" if coat else "-",
-            f"{val_coat:.2f} PLN" if coat else "-", ""
+            f"{val_coat:.2f} PLN" if coat else "-", p.get("Uwagi", "-")
         ]
 
         for col, val in enumerate(values):
