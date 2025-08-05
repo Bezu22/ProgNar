@@ -1,5 +1,5 @@
 {
-    "client_name": "Klient",
+    "client_name": "Frezwid",
     "items": [
         {
             "name": "Frezy",
@@ -11,91 +11,33 @@
                 "fiChwyt": "12",
                 "ciecie": "+",
                 "Ilosc sztuk": 5,
-                "Uwagi": "Mocne zuzycie",
+                "Uwagi": "zuzyte mocno",
                 "Powloka": "ALCRONA PRO/LATUMA",
                 "Długość całkowita": "100",
                 "Cena powloki": "27.98 PLN"
             },
             "quantity": 5,
             "sharpening_price": 46.3,
-            "cutting_price": 0.0,
+            "cutting_price": 12.0,
             "coating_price": 27.98
         },
         {
             "name": "Frezy",
             "params": {
                 "Typ": "Frez promieniowy",
-                "Srednica": "6",
-                "Zakres srednicy": "do 6.0",
-                "Ilosc ostrzy": "4",
-                "fiChwyt": "6",
-                "ciecie": "-",
-                "Ilosc sztuk": 3,
-                "Uwagi": "-",
-                "Powloka": "ALCRONA PRO/LATUMA",
-                "Długość całkowita": "100",
-                "Cena powloki": "15.07 PLN"
-            },
-            "quantity": 3,
-            "sharpening_price": 55.3,
-            "cutting_price": 0.0,
-            "coating_price": 15.07
-        },
-        {
-            "name": "Frezy",
-            "params": {
-                "Typ": "Frez kulisty",
-                "Srednica": "8",
-                "Zakres srednicy": "6.1 - 10.0",
-                "Ilosc ostrzy": "4",
-                "fiChwyt": "8",
-                "ciecie": "+",
-                "Ilosc sztuk": 10,
-                "Uwagi": "Dwa ciecia",
-                "Powloka": "ALCRONA PRO/LATUMA",
-                "Długość całkowita": "100",
-                "Cena powloki": "16.14 PLN"
-            },
-            "quantity": 10,
-            "sharpening_price": 52.7,
-            "cutting_price": 0.0,
-            "coating_price": 16.14
-        },
-        {
-            "name": "Frezy",
-            "params": {
-                "Typ": "Frez prosty",
-                "Srednica": "12",
-                "Zakres srednicy": "10.1 - 12.0",
-                "Ilosc ostrzy": "4",
-                "fiChwyt": "12",
-                "ciecie": "-",
-                "Ilosc sztuk": 10,
-                "Uwagi": "-",
-                "Powloka": "BRAK"
-            },
-            "quantity": 10,
-            "sharpening_price": 46.3,
-            "cutting_price": 0.0,
-            "coating_price": 0.0
-        },
-        {
-            "name": "Frezy",
-            "params": {
-                "Typ": "Frez kulisty",
                 "Srednica": "10",
                 "Zakres srednicy": "6.1 - 10.0",
                 "Ilosc ostrzy": "4",
                 "fiChwyt": "10",
                 "ciecie": "+",
-                "Ilosc sztuk": 4,
+                "Ilosc sztuk": 5,
                 "Uwagi": "-",
                 "Powloka": "ALCRONA PRO/LATUMA",
                 "Długość całkowita": "100",
                 "Cena powloki": "19.38 PLN"
             },
-            "quantity": 4,
-            "sharpening_price": 59.9,
+            "quantity": 5,
+            "sharpening_price": 52.7,
             "cutting_price": 12.0,
             "coating_price": 19.38
         },
@@ -108,13 +50,13 @@
                 "Ilosc ostrzy": "3",
                 "fiChwyt": "8",
                 "ciecie": "+",
-                "Ilosc sztuk": 5,
-                "Uwagi": "-",
+                "Ilosc sztuk": 10,
+                "Uwagi": "zlamane",
                 "Powloka": "ALCRONA PRO/LATUMA",
                 "Długość całkowita": "100",
                 "Cena powloki": "16.14 PLN"
             },
-            "quantity": 5,
+            "quantity": 10,
             "sharpening_price": 52.7,
             "cutting_price": 12.0,
             "coating_price": 16.14
@@ -123,39 +65,55 @@
             "name": "Frezy",
             "params": {
                 "Typ": "Frez prosty",
-                "Srednica": "8",
-                "Zakres srednicy": "6.1 - 10.0",
-                "Ilosc ostrzy": "4",
-                "fiChwyt": "8",
+                "Srednica": "6",
+                "Zakres srednicy": "do 6.0",
+                "Ilosc ostrzy": "3",
+                "fiChwyt": "6",
                 "ciecie": "+",
-                "Ilosc sztuk": 15,
+                "Ilosc sztuk": 4,
                 "Uwagi": "-",
                 "Powloka": "BRAK"
             },
-            "quantity": 15,
-            "sharpening_price": 37.5,
+            "quantity": 4,
+            "sharpening_price": 41.0,
             "cutting_price": 12.0,
             "coating_price": 0.0
         },
         {
-            "name": "Frezy",
+            "name": "Wiertła",
             "params": {
-                "Typ": "Frez prosty",
-                "Srednica": "12",
-                "Zakres srednicy": "10.1 - 12.0",
-                "Ilosc ostrzy": "4",
-                "fiChwyt": "12",
+                "Typ": "Wiertło (IK:2)",
+                "Srednica": "8",
+                "Zakres srednicy": "6.1 - 8.0",
+                "Ilosc ostrzy": "2",
+                "fiChwyt": "8",
                 "ciecie": "-",
-                "Ilosc sztuk": 1,
+                "Ilosc sztuk": 3,
                 "Uwagi": "-",
-                "Powloka": "Azotek Cyrkonu (ZrN)",
-                "Długość całkowita": "100",
-                "Cena powloki": "26.72 PLN"
+                "Powloka": "BRAK"
             },
-            "quantity": 1,
-            "sharpening_price": 62.4,
+            "quantity": 3,
+            "sharpening_price": 42.9,
             "cutting_price": 0.0,
-            "coating_price": 26.72
+            "coating_price": 0.0
+        },
+        {
+            "name": "Wiertła",
+            "params": {
+                "Typ": "Wiertło",
+                "Srednica": "5",
+                "Zakres srednicy": "do 6.0",
+                "Ilosc ostrzy": "2",
+                "fiChwyt": "6",
+                "ciecie": "-",
+                "Ilosc sztuk": 5,
+                "Uwagi": "-",
+                "Powloka": "BRAK"
+            },
+            "quantity": 5,
+            "sharpening_price": 34.9,
+            "cutting_price": 0.0,
+            "coating_price": 0.0
         }
     ]
 }

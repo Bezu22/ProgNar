@@ -1,11 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
 from tools_menu.tool_menu import ToolMenu
-from config.utils import load_pricing_data, format_price, validate_positive_int, validate_blades, get_price_for_quantity
+from config.utils import load_pricing_data, format_price, validate_positive_int, validate_blades, get_price_for_quantity, add_separator, resource_path
 from config.ui_utils import update_button_styles
 from config.cart_io import save_cart_to_file
-from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z,FREZY_DEFAULT_DIAMETER
-from config.utils import resource_path
+from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z, FREZY_DEFAULT_DIAMETER
 
 class FrezyMenu(ToolMenu):
     """Klasa obsługująca menu frezów, dziedzicząca po ToolMenu."""
@@ -19,10 +18,18 @@ class FrezyMenu(ToolMenu):
             edit_index: Indeks edytowanej pozycji w koszyku (lub None).
         """
         super().__init__(parent, cart, "Menu frezów", resource_path("data/cennik_frezy.json"), FREZY_TYPES, FREZY_DIAMETER_OPTIONS,
-                         FREZY_TYPES[0][1], FREZY_DEFAULT_DIAMETER, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z)
+                         FREZY_TYPES[0][1], FREZY_DEFAULT_DIAMETER, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z, type_button_width=10)
         self.main_app = main_app
         self.edit_index = edit_index
         self.top.attributes('-topmost', True)  # Okno zawsze na wierzchu
+
+        # Etykiety cen
+        self.price_label = tk.Label(self.top, text="Cena jednostkowa: 0.00 PLN", font=("Arial", 10))
+        self.price_label.pack(pady=5)
+        self.powlekanie_menu.coating_price_label.pack(pady=5)
+        self.total_price_label = tk.Label(self.top, text="Wartość: 0.00 PLN", font=("Arial", 12, "bold"))
+        self.total_price_label.pack(pady=5)
+        add_separator(self.top)
 
         # Wypełnienie pól w trybie edycji
         if self.edit_index is not None:
@@ -50,6 +57,26 @@ class FrezyMenu(ToolMenu):
             update_button_styles(self.blades_menu.z_buttons, z_value)
 
         self.update_price()
+
+    def map_diameter_to_range(self, diameter):
+        """Mapuje średnicę na zakres z pliku cennik_frezy.json."""
+        try:
+            diameter = float(diameter)
+            if diameter <= 0:
+                return None
+            selected_type = self.type_var.get()
+            selected_z = self.z_var.get()
+            z_key = validate_blades(selected_z)
+            type_data = self.pricing_data.get(selected_type, {})
+            z_data = type_data.get("ilosc_ostrzy", {}).get(z_key, {})
+            for item in z_data.get("cennik", []):
+                zakres = item.get("zakres_srednicy", "")
+                min_diam, max_diam = self.parse_diameter_range(zakres)
+                if min_diam is not None and max_diam is not None and min_diam <= diameter <= max_diam:
+                    return zakres
+            return None
+        except (ValueError, TypeError):
+            return None
 
     def update_price(self, event=None):
         """Aktualizuje cenę na podstawie wybranych parametrów i ilości sztuk."""
