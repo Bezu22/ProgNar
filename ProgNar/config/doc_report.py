@@ -5,11 +5,21 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from tkinter import filedialog
 from datetime import datetime
 from config.utils import resource_path
+from config.client_utils import get_client_data
 
-def generate_report():
+
+def generate_report(client_name, main_app):
     json_path = resource_path("data/temp_cart.json")
     with open(json_path, encoding='utf-8') as f:
         data = json.load(f)
+
+    # Pobierz dane klienta za pomocą get_client_data
+    client_data = get_client_data(client_name.get(), main_app)
+
+    # Przygotuj dane klienta, używając "......." dla pustych pól
+    client_name_str = client_name.get().strip() if client_name.get().strip() and client_name.get() != "- -" else "......."
+    client_address = client_data.get("address", "").strip() if client_data else "......."
+    client_contact = client_data.get("contact", "").strip() if client_data else "......."
 
     save_path = filedialog.asksaveasfilename(
         defaultextension=".docx",
@@ -33,27 +43,34 @@ def generate_report():
     # Czcionka
     style = doc.styles['Normal']
     style.font.name = 'Calibri'
-    style.font.size = Pt(6)
+    style.font.size = Pt(14)  # Domyślna czcionka dla dokumentu
 
     # Dodajemy dzisiejszą datę przed nazwą firmy
     today = datetime.today().strftime("%d.%m.%Y")
     date_para = doc.add_paragraph()
     date_run = date_para.add_run(f"Świdnica, {today}")
     date_run.font.size = Pt(8)
+    date_para.paragraph_format.space_after = Pt(8)  # Odstęp po dacie
 
-    # Górny wiersz z nazwą klienta i logo
+    # Górny wiersz z nazwą klienta, adresem, kontaktem i logo
     top_table = doc.add_table(rows=1, cols=2)
 
-    # Komórka z nazwą klienta
+    # Komórka z nazwą klienta, adresem i kontaktem
     client_cell = top_table.cell(0, 0)
     client_para = client_cell.paragraphs[0]
-    client_run = client_para.add_run(data.get("client_name", "--"))
+    client_run = client_para.add_run(client_name_str)
     client_run.bold = True
-    client_run.font.size = Pt(14)  # większy rozmiar czcionki dla nazwy klienta
+    client_run.font.size = Pt(14)
+    client_para.paragraph_format.space_after = Pt(2)  # Minimalny odstęp po nazwie
 
-    # Dodanie dwóch kolejnych linii
-    for _ in range(2):
-        client_cell.add_paragraph("..........................................................")
+    # Dodanie linii z adresem i kontaktem
+    address_para = client_cell.add_paragraph(client_address)
+    address_para.runs[0].font.size = Pt(14)
+    address_para.paragraph_format.space_after = Pt(2)  # Minimalny odstęp po adresie
+
+    contact_para = client_cell.add_paragraph(client_contact)
+    contact_para.runs[0].font.size = Pt(14)
+    contact_para.paragraph_format.space_after = Pt(2)  # Minimalny odstęp po kontakcie
 
     logo_cell = top_table.cell(0, 1)
     logo_para = logo_cell.paragraphs[0]
@@ -102,6 +119,7 @@ def generate_report():
         cell = table.rows[0].cells[i]
         cell.text = header
         cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        cell.paragraphs[0].runs[0].font.size = Pt(6)  # Czcionka nagłówków tabeli na 6 pt
 
     # Dane
     sum_qty = 0
@@ -136,6 +154,7 @@ def generate_report():
             para = cell.paragraphs[0]
             para.text = val
             para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            para.runs[0].font.size = Pt(6)  # Czcionka danych tabeli na 6 pt
 
     # Pusta linia
     table.add_row()
@@ -148,22 +167,25 @@ def generate_report():
 
     for i in [7, 9, 12]:
         summary_row[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        summary_row[i].paragraphs[0].runs[0].font.size = Pt(6)
 
     # Rząd łącznej sumy
     total_row = table.add_row().cells
     total_label_cell = total_row[11]
     total_label_cell.text = "Suma:"
     total_label_cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    total_label_cell.paragraphs[0].runs[0].font.size = Pt(6)
 
     total_value_cell = total_row[12]
     total_value_cell.text = f"{sum_sharpening + sum_coating:.2f} PLN"
     total_value_cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    total_value_cell.paragraphs[0].runs[0].font.size = Pt(6)
 
     # Ustawienia szerokości kolumn
     for i, col in enumerate(table.columns):
         width_cm = column_widths_cm.get(i, 1.5)  # Domyślna szerokość 1.5 cm, jeśli nie określono
         try:
-            col.width = Inches(width_cm / 2.54)  # Ustaw szerokość kolumny, a nie pojedynczych komórek
+            col.width = Inches(width_cm / 2.54)  # Ustaw szerokość kolumny
         except Exception as e:
             print(f"Błąd przy ustawianiu szerokości kolumny {i}: {str(e)}")
 
