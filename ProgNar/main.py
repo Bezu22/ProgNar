@@ -1,10 +1,10 @@
 # main.py - Główny moduł aplikacji z menu głównym i koszykiem
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from PIL import Image, ImageTk
 from cart import Cart
-from config.cart_io import save_cart_to_file, save_cart_to_file_with_dialog, load_cart_from_file, load_cart_from_file_with_dialog, clear_temp_cart
+from config.cart_io import load_cart_from_file
 from tools_menu.frezy_menu import FrezyMenu
 from tools_menu.wiertla_menu import WiertlaMenu
 from tools_menu.pozostale_menu import PozostaleMenu
@@ -14,7 +14,10 @@ from config.cenniki import CennikiMenu
 from config.doc_report import generate_report
 from config.utils import resource_path
 from tools_menu.remarks_menu import RemarksMenu
-from main_menu.bottom_mainmenu import BottomSection
+from ui.main_menu.bottom_mainmenu import BottomSection
+#refaktor
+from core.cart_state import CartStateManager
+from ui.frezy_menu.frezy_ui import FrezyUI
 
 class ToolPricingApp:
     def __init__(self, root):
@@ -24,6 +27,7 @@ class ToolPricingApp:
         self.cart = Cart()
         self.client_name = tk.StringVar(value="- -")
         load_cart_from_file(self.cart, self.client_name)
+        self.cart_manager = CartStateManager()
 
         # Lewa ramka dla menu
         self.left_frame = tk.Frame(self.root, width=450, bg="lightgrey")
@@ -216,7 +220,11 @@ class ToolPricingApp:
                     RemarksMenu(self.root, self.cart, index, self)
 
     def show_frezy_menu(self):
-        FrezyMenu(self.root, self.cart, main_app=self)
+        FrezyUI(self.root, on_save=self.handle_frezy_save)
+
+    def handle_frezy_save(self):
+        self.core_manager.refresh_cart_from_file()
+        self.update_cart_display()
 
     def show_wiertla_menu(self):
         WiertlaMenu(self.root, self.cart, main_app=self)
