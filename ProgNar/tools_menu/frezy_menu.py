@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
 from tools_menu.tool_menu import ToolMenu
-from config.utils import load_pricing_data, format_price, validate_positive_int, validate_blades, get_price_for_quantity
+from config.utils import load_pricing_data, format_price, validate_positive_int, validate_blades, get_price_for_quantity, add_separator, resource_path
 from config.ui_utils import update_button_styles
 from config.cart_io import save_cart_to_file
-from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z
+from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z, FREZY_DEFAULT_DIAMETER
 
 class FrezyMenu(ToolMenu):
     """Klasa obsługująca menu frezów, dziedzicząca po ToolMenu."""
@@ -17,11 +17,19 @@ class FrezyMenu(ToolMenu):
             main_app: Referencja do głównej aplikacji.
             edit_index: Indeks edytowanej pozycji w koszyku (lub None).
         """
-        super().__init__(parent, cart, "Menu frezów", "data/cennik_frezy.json", FREZY_TYPES, FREZY_DIAMETER_OPTIONS,
-                         FREZY_TYPES[0][1], FREZY_DIAMETER_OPTIONS[0][1], FREZY_Z_OPTIONS, FREZY_DEFAULT_Z)
+        super().__init__(parent, cart, "Menu frezów", resource_path("data/cennik_frezy.json"), FREZY_TYPES, FREZY_DIAMETER_OPTIONS,
+                         FREZY_TYPES[0][1], FREZY_DEFAULT_DIAMETER, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z, type_button_width=10)
         self.main_app = main_app
         self.edit_index = edit_index
         self.top.attributes('-topmost', True)  # Okno zawsze na wierzchu
+
+        # Etykiety cen
+        self.price_label = tk.Label(self.top, text="Cena jednostkowa: 0.00 PLN", font=("Arial", 10))
+        self.price_label.pack(pady=5)
+        self.powlekanie_menu.coating_price_label.pack(pady=5)
+        self.total_price_label = tk.Label(self.top, text="Wartość: 0.00 PLN", font=("Arial", 12, "bold"))
+        self.total_price_label.pack(pady=5)
+        add_separator(self.top)
 
         # Wypełnienie pól w trybie edycji
         if self.edit_index is not None:
@@ -50,6 +58,26 @@ class FrezyMenu(ToolMenu):
 
         self.update_price()
 
+    def map_diameter_to_range(self, diameter):
+        """Mapuje średnicę na zakres z pliku cennik_frezy.json."""
+        try:
+            diameter = float(diameter)
+            if diameter <= 0:
+                return None
+            selected_type = self.type_var.get()
+            selected_z = self.z_var.get()
+            z_key = validate_blades(selected_z)
+            type_data = self.pricing_data.get(selected_type, {})
+            z_data = type_data.get("ilosc_ostrzy", {}).get(z_key, {})
+            for item in z_data.get("cennik", []):
+                zakres = item.get("zakres_srednicy", "")
+                min_diam, max_diam = self.parse_diameter_range(zakres)
+                if min_diam is not None and max_diam is not None and min_diam <= diameter <= max_diam:
+                    return zakres
+            return None
+        except (ValueError, TypeError):
+            return None
+
     def update_price(self, event=None):
         """Aktualizuje cenę na podstawie wybranych parametrów i ilości sztuk."""
         try:
@@ -58,6 +86,16 @@ class FrezyMenu(ToolMenu):
             selected_diameter = self.map_diameter_to_range(diameter_input)
             selected_z = self.z_var.get()
             quantity = validate_positive_int(self.quantity_var.get())
+
+            # Walidacja diameter_input
+            try:
+                float(diameter_input)
+            except ValueError:
+                self.price_label.config(text="Cena jednostkowa: Błąd")
+                self.powlekanie_menu.coating_price_label.config(text="Cena powłoki: Błąd")
+                self.total_price_label.config(text="Wartość: Błąd")
+                print(f"Błąd: Nieprawidłowa średnica: {diameter_input}")
+                return
 
             if not (selected_type and selected_diameter and selected_z):
                 self.price_label.config(text="Cena jednostkowa: 0.00 PLN")
@@ -82,7 +120,10 @@ class FrezyMenu(ToolMenu):
             coating_price = self.powlekanie_menu.get_coating_price(diameter_input)
             cutting_price = 0.0
             if self.ciecie_var.get():
+                print(f"Checkbox cięcia zaznaczony: {self.ciecie_var.get()}")
                 cutting_price = self.get_cutting_price(diameter_input)
+            else:
+                print("Checkbox cięcia niezaznaczony")
 
             unit_price = sharpening_price + cutting_price
             total_price = self._calculate_total_price(sharpening_price, cutting_price, coating_price, quantity)
@@ -93,7 +134,8 @@ class FrezyMenu(ToolMenu):
             display_z = selected_z if selected_z != "2-4" else z_key
             coating_display = self.powlekanie_menu.coating_var.get() or "BRAK"
             ciecie_display = "+" if self.ciecie_var.get() else "-"
-            print(f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {sharpening_price} Cięcie: {ciecie_display} Powłoka: {coating_display}")
+            print(
+                f"{selected_type} {diameter_input} {display_z} {quantity} szt.: {sharpening_price} Cięcie: {ciecie_display} ({cutting_price}) Powłoka: {coating_display} ({coating_price})")
         except Exception as e:
             self.price_label.config(text="Cena jednostkowa: Błąd")
             self.powlekanie_menu.coating_price_label.config(text="Cena powłoki: Błąd")

@@ -1,13 +1,13 @@
 import tkinter as tk
-from powlekanie_menu import CoatingMenu as PowlekanieMenu
+from tools_menu.powlekanie_menu import CoatingMenu as PowlekanieMenu
 from tools_menu.blades_menu import BladesMenu
-from config.utils import load_pricing_data, format_price, validate_positive_int, add_separator
+from config.utils import load_pricing_data, add_separator, resource_path
 from config.ui_utils import update_button_styles
+from config.config import FREZY_DEFAULT_DIAMETER
 
 class ToolMenu:
     """Bazowa klasa dla menu narzędzi (frezy, wiertła itp.)."""
-
-    def __init__(self, parent, cart, title, json_file, types, diameter_options, default_type, default_diameter, z_options=["1", "2", "3", "4", "5", "6"], default_z="4"):
+    def __init__(self, parent, cart, title, json_file, types, diameter_options, default_type, default_diameter=FREZY_DEFAULT_DIAMETER, z_options=["1", "2", "3", "4", "5", "6"], default_z="4", type_button_width=10):
         """
         Inicjalizuje menu narzędzia.
         Args:
@@ -21,11 +21,13 @@ class ToolMenu:
             default_diameter (str): Domyślna średnica.
             z_options (list): Lista opcji ilości ostrzy.
             default_z (str): Domyślna ilość ostrzy.
+            type_button_width (int): Szerokość przycisków typu.
         """
         self.parent = parent
         self.cart = cart
         self.pricing_data = load_pricing_data(json_file)
-        self.uslugi_data = load_pricing_data('../data/cennik_uslugi.json')
+        self.uslugi_data = load_pricing_data(resource_path("data/cennik_uslugi.json"))
+        print(f"uslugi_data: {self.uslugi_data}")  # Debugowanie
 
         # Inicjalizacja zmiennych
         self.type_var = tk.StringVar(value=default_type)
@@ -46,7 +48,7 @@ class ToolMenu:
         button_frame = tk.Frame(self.top)
         button_frame.pack(pady=5)
         for display_name, json_name in types:
-            btn = tk.Button(button_frame, text=display_name, width=10,
+            btn = tk.Button(button_frame, text=display_name, width=type_button_width,
                             command=lambda t=json_name: self.select_type(t))
             btn.pack(side="left", padx=5)
             self.type_buttons[json_name] = btn
@@ -69,22 +71,34 @@ class ToolMenu:
 
         self.diameter_entry = tk.Entry(diameter_frame, textvariable=self.diameter_var, width=10)
         self.diameter_entry.pack(side="left", padx=5)
+        tk.Label(diameter_frame, text="Średnica chwytu (mm):", font=("Arial", 12)).pack(side="left", padx=5)
+        self.chwyt_entry = tk.Entry(diameter_frame, textvariable=self.chwyt_var, width=10)
+        self.chwyt_entry.pack(side="left", padx=5)
         self.diameter_entry.bind("<KeyRelease>", self.on_diameter_entry_change)
+        self.chwyt_entry.bind("<KeyRelease>", self.on_chwyt_entry_change)
         add_separator(self.top)
 
         # Ilość ostrzy
-        self.blades_menu = BladesMenu(self.top, self.z_var, self.update_z_and_price, z_options, default_z)
+        if z_options:  # Jeśli podano opcje ilości ostrzy, użyj BladesMenu
+            self.blades_menu = BladesMenu(self.top, self.z_var, self.update_z_and_price, z_options, default_z)
+        else:  # W przeciwnym razie tylko pole tekstowe
+            tk.Label(self.top, text="Ilość ostrzy:", font=("Arial", 12)).pack(pady=5)
+            z_frame = tk.Frame(self.top)
+            z_frame.pack(pady=5)
+            self.z_entry = tk.Entry(z_frame, textvariable=self.z_var, width=10)
+            self.z_entry.pack(side="left", padx=5)
+            self.z_entry.bind("<KeyRelease>", self.update_z_and_price)
         add_separator(self.top)
 
         # Ilość sztuk i cięcie
-        quantity_frame = tk.Frame(self.top)
-        quantity_frame.pack(pady=5)
-        tk.Label(quantity_frame, text="Ilość sztuk:", font=("Arial", 12)).pack(side="left", padx=5)
-        self.quantity_entry = tk.Entry(quantity_frame, textvariable=self.quantity_var, width=10)
+        self.quantity_menu = tk.Frame(self.top)
+        self.quantity_menu.pack(pady=5)
+        tk.Label(self.quantity_menu, text="Ilość sztuk:", font=("Arial", 12)).pack(side="left", padx=5)
+        self.quantity_entry = tk.Entry(self.quantity_menu, textvariable=self.quantity_var, width=10)
         self.quantity_entry.pack(side="left", padx=5)
         self.quantity_entry.bind("<KeyRelease>", self.update_price)
 
-        self.ciecie_check = tk.Checkbutton(quantity_frame, text="Cięcie", variable=self.ciecie_var, command=self.update_price)
+        self.ciecie_check = tk.Checkbutton(self.quantity_menu, text="Cięcie", variable=self.ciecie_var, command=self.update_price)
         self.ciecie_check.pack(side="left", padx=5)
         add_separator(self.top)
 
@@ -92,47 +106,20 @@ class ToolMenu:
         self.powlekanie_menu = PowlekanieMenu(self.top, self.update_price)
         add_separator(self.top)
 
-        # Etykiety cen
-        self.price_label = tk.Label(self.top, text="Cena jednostkowa: 0.00 PLN", font=("Arial", 10))
-        self.price_label.pack(pady=5)
-        self.powlekanie_menu.coating_price_label.pack(pady=5)
-        self.total_price_label = tk.Label(self.top, text="Wartość: 0.00 PLN", font=("Arial", 12, "bold"))
-        self.total_price_label.pack(pady=5)
-
         # Przyciski akcji
         self.add_button = tk.Button(self.top, text="Dodaj do koszyka", font=("Arial", 12), command=self.add_to_cart)
         self.add_button.pack(pady=5)
         tk.Button(self.top, text="Zamknij", font=("Arial", 12), command=self.top.destroy).pack(pady=5)
 
-        self.update_price()
-
-    def map_diameter_to_range(self, diameter):
-        """Mapuje średnicę na zakres z pliku JSON."""
+    def on_chwyt_entry_change(self, event=None):
+        """Waliduje wprowadzoną wartość średnicy chwytu."""
         try:
-            diameter = float(diameter)
-            if diameter <= 0:
-                return None
-            selected_type = self.type_var.get()
-            type_data = self.pricing_data.get(selected_type, {})
-            # Obsługa różnych struktur JSON (frezy i wiertła)
-            if "ilosc_ostrzy" in type_data:
-                # Struktura dla frezów
-                for z_key in type_data.get("ilosc_ostrzy", {}).values():
-                    for item in z_key.get("cennik", []):
-                        zakres = item.get("zakres_srednicy", "")
-                        min_diam, max_diam = self.parse_diameter_range(zakres)
-                        if min_diam is not None and max_diam is not None and min_diam <= diameter <= max_diam:
-                            return zakres
-            else:
-                # Struktura dla wierteł
-                for item in type_data.get("zakres_srednicy", []):
-                    zakres = item.get("zakres_srednicy", "")
-                    min_diam, max_diam = self.parse_diameter_range(zakres)
-                    if min_diam is not None and max_diam is not None and min_diam <= diameter <= max_diam:
-                        return zakres
-            return None
-        except (ValueError, TypeError):
-            return None
+            chwyt = float(self.chwyt_var.get())
+            if chwyt <= 0:
+                self.chwyt_var.set("12")
+        except ValueError:
+            self.chwyt_var.set("12")
+        self.update_price()
 
     def parse_diameter_range(self, zakres):
         """Parsuje zakres średnicy (np. 'do 6.0' lub '6.1 - 8.0') na min i max."""
@@ -183,29 +170,40 @@ class ToolMenu:
             self.chwyt_var.set("12")
         self.update_z_and_price()
 
-    def update_z_and_price(self):
+    def update_z_and_price(self, event=None):
         """Zachowuje ilość ostrzy, jeśli prawidłowa, i aktualizuje cenę."""
         current_z = self.z_var.get()
         try:
             z_value = float(current_z)
             if not z_value.is_integer():
-                self.z_var.set(self.blades_menu.z_options[0])
-                self.blades_menu.z_entry.delete(0, tk.END)
-                self.blades_menu.z_entry.insert(0, self.blades_menu.z_options[0])
-                update_button_styles(self.blades_menu.z_buttons, self.blades_menu.z_options[0])
+                default_z = self.blades_menu.z_options[0] if hasattr(self, 'blades_menu') else "2"
+                self.z_var.set(default_z)
+                if hasattr(self, 'blades_menu'):
+                    self.blades_menu.z_entry.delete(0, tk.END)
+                    self.blades_menu.z_entry.insert(0, default_z)
+                    update_button_styles(self.blades_menu.z_buttons, default_z)
+                else:
+                    self.z_entry.delete(0, tk.END)
+                    self.z_entry.insert(0, default_z)
             else:
                 self.z_var.set(current_z)
-                self.blades_menu.z_entry.delete(0, tk.END)
-                self.blades_menu.z_entry.insert(0, current_z)
-                update_button_styles(self.blades_menu.z_buttons, current_z)
+                if hasattr(self, 'blades_menu'):
+                    self.blades_menu.z_entry.delete(0, tk.END)
+                    self.blades_menu.z_entry.insert(0, current_z)
+                    update_button_styles(self.blades_menu.z_buttons, current_z)
+                else:
+                    self.z_entry.delete(0, tk.END)
+                    self.z_entry.insert(0, current_z)
         except (ValueError, TypeError):
-            self.z_var.set(self.blades_menu.z_options[0])
-            self.blades_menu.z_entry.delete(0, tk.END)
-            self.blades_menu.z_entry.insert(0, self.blades_menu.z_options[0])
-            update_button_styles(self.blades_menu.z_buttons, self.blades_menu.z_options[0])
-        self.price_label.config(text="Cena jednostkowa: 0.00 PLN")
-        self.powlekanie_menu.coating_price_label.config(text="Cena powłoki: 0.00 PLN")
-        self.total_price_label.config(text="Wartość: 0.00 PLN")
+            default_z = self.blades_menu.z_options[0] if hasattr(self, 'blades_menu') else "2"
+            self.z_var.set(default_z)
+            if hasattr(self, 'blades_menu'):
+                self.blades_menu.z_entry.delete(0, tk.END)
+                self.blades_menu.z_entry.insert(0, default_z)
+                update_button_styles(self.blades_menu.z_buttons, default_z)
+            else:
+                self.z_entry.delete(0, tk.END)
+                self.z_entry.insert(0, default_z)
         self.update_price()
 
     def get_cutting_price(self, diameter):
@@ -213,12 +211,18 @@ class ToolMenu:
         try:
             diam_float = float(diameter)
             if diam_float <= 12.0:
-                return self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("1 - 12", 0.0)
+                price = self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("1 - 12", 0.0)
+                print(f"Średnica: {diam_float}, cena cięcia (1 - 12): {price}")
+                return price
             elif 12.1 <= diam_float <= 50.0:
-                return self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("12.1 - 50", 0.0)
+                price = self.uslugi_data.get("Ciecie", {}).get("cennik", [{}])[0].get("12.1 - 50", 0.0)
+                print(f"Średnica: {diam_float}, cena cięcia (12.1 - 50): {price}")
+                return price
             else:
+                print(f"Średnica: {diam_float}, cena cięcia: 0.0 (poza zakresem)")
                 return 0.0
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            print(f"Błąd w get_cutting_price: {str(e)}")
             return 0.0
 
     def _calculate_total_price(self, sharpening_price, cutting_price, coating_price, quantity):

@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Klient1",
+        "address": "ul. Testowa 1",
+        "contact": "123-456-789"
+    },
+    {
+        "name": "Klient2",
+        "address": "ul. Inna 2",
+        "contact": "987-654-321"
+    },
+    {
+        "name": "Freziwid",
+        "address": "ul. Piłsudzkiego",
+        "contact": "726 666 366"
+    },
+    {
+        "name": "Klient",
+        "address": "pilsudzkiego 12",
+        "contact": "email@tudny"
+    }
+]
