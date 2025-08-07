@@ -31,7 +31,10 @@ class ToolMenu:
 
         # Inicjalizacja zmiennych
         self.type_var = tk.StringVar(value=default_type)
+
         self.diameter_var = tk.StringVar(value=default_diameter)
+        self.diameter_var.trace("w", lambda *args: self.validate_diameter())
+
         self.chwyt_var = tk.StringVar(value=default_diameter)
         self.z_var = tk.StringVar(value=default_z)
         self.quantity_var = tk.StringVar(value="1")
@@ -110,6 +113,13 @@ class ToolMenu:
         self.add_button = tk.Button(self.top, text="Dodaj do koszyka", font=("Arial", 12), command=self.add_to_cart)
         self.add_button.pack(pady=5)
         tk.Button(self.top, text="Zamknij", font=("Arial", 12), command=self.top.destroy).pack(pady=5)
+
+    def validate_diameter(self):
+        """Zamienia przecinek na kropkę w polu średnicy."""
+        value = self.diameter_var.get()
+        if ',' in value:
+            new_value = value.replace(',', '.')
+            self.diameter_var.set(new_value)
 
     def on_chwyt_entry_change(self, event=None):
         """Waliduje wprowadzoną wartość średnicy chwytu."""
