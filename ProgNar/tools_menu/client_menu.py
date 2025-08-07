@@ -229,9 +229,9 @@ class ClientMenu:
         save_cart_to_file(self.main_app.cart, self.main_app.client_name)
         self.main_app.cart.update_cart_display(
             self.main_app.cart_tree,
-            self.main_app.suma_uslug_label,
-            self.main_app.suma_powlekanie_label,
-            self.main_app.suma_total_label
+            self.main_app.bottom.suma_uslug_label,
+            self.main_app.bottom.suma_powlekanie_label,
+            self.main_app.bottom.suma_total_label
         )
         self.top.destroy()
 

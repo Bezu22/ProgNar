@@ -215,10 +215,12 @@ class FrezyMenu(ToolMenu):
                 self.top.destroy()
 
             if self.main_app:
-                self.main_app.cart.update_cart_display(self.main_app.cart_tree,
-                                                      self.main_app.suma_uslug_label,
-                                                      self.main_app.suma_powlekanie_label,
-                                                      self.main_app.suma_total_label)
+                self.main_app.cart.update_cart_display(
+                    self.main_app.cart_tree,
+                    self.main_app.bottom.suma_uslug_label,
+                    self.main_app.bottom.suma_powlekanie_label,
+                    self.main_app.bottom.suma_total_label
+                )
                 if self.edit_index is None:
                     self.top.focus_force()  # Przywraca fokus na okno FrezyMenu po dodaniu
 
