@@ -26,9 +26,9 @@ def validate_positive_int(value):
     """Sprawdza, czy wartość jest dodatnią liczbą całkowitą."""
     try:
         val = int(value)
-        return val if val > 0 else 1
+        return True if val > 0 else False
     except (ValueError, TypeError):
-        return 1
+        return False
 
 def add_separator(parent, color="#f21821", thickness=1, pady=10):
     """Dodaje wizualny separator."""

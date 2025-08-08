@@ -15,6 +15,7 @@ from config.doc_report import generate_report
 from config.utils import resource_path
 from tools_menu.remarks_menu import RemarksMenu
 from ui.main_menu.bottom_mainmenu import BottomSection
+
 #refaktor
 from core.cart_state import CartStateManager
 from ui.frezy_menu.frezy_ui import FrezyUI
