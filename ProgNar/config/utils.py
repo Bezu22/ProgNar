@@ -83,3 +83,67 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
+def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var):
+    #konwersja ze StripVar
+    tool_type = tool_type_var.get().strip()
+    try:
+        num_blades = int(num_blades_var.get().strip())
+        diameter = float(diameter_var.get().replace(",", ".").strip())
+        quantity = int(quantity_var.get().strip())
+    except ValueError:
+        print("Błąd konwersji danych wejściowych")
+        return None
+
+    print("Na wejsciu")
+    print(f"Zeby: {num_blades}")
+    print(f"Srednica: {diameter}")
+    print(f"ilosc: {quantity}")
+
+
+    cennik_frezy_path = "data/cennik_frezy.json"
+    with open(cennik_frezy_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        #1. Typ
+        tool_data = data.get(tool_type)
+        if not tool_data:
+            print("Brak Tool Type")
+            return None
+        #Ilosc ostrzy
+        blade_category = "2-4" if 2 <= num_blades <= 4 else "pozostale"
+        blade_data = tool_data["ilosc_ostrzy"].get(blade_category)
+        if not blade_data:
+            print("Brak ilsoci ostrzy")
+            return None
+        #zakres srednicy
+        for entry in blade_data["cennik"]:
+            zakres = entry["zakres_srednicy"]
+            if zakres.startswith("do"):
+                max_diameter = float(zakres.split(" ")[1])
+                if diameter <= max_diameter:
+                    price_table = entry["ceny"]
+                    break
+            else:
+                min_d, max_d = map(float, zakres.split(" - "))
+                if min_d <= diameter <= max_d:
+                    price_table = entry["ceny"]
+                    break
+        else:
+            return None  # średnica poza zakresem
+        #Ilosc sztuk
+        if quantity == 1:
+            qty_key = "1"
+        elif 2 <= quantity <= 4:
+            qty_key = "2-4"
+        elif 5 <= quantity <= 10:
+            qty_key = "5-10"
+        elif 11 <= quantity <= 20:
+            qty_key = "11-20"
+        else:
+            qty_key = "11-20"  # lub inna logika dla większych ilości
+
+        #debug
+        print(f"Typ: {tool_type}, Ostrza: {num_blades}, Średnica: {diameter}, Ilość: {quantity}, Cena: {price_table.get(qty_key)}")
+        #pobierz cene
+        print(f"Typ zwracanej wartości: {type(price_table.get(qty_key))}")
+        return price_table.get(qty_key)
