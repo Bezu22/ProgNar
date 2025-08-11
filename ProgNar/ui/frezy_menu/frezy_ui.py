@@ -1,8 +1,9 @@
 import tkinter as tk
 import math
+from statistics import quantiles
 from tkinter import messagebox
 from tools_menu.powlekanie_menu import CoatingMenu
-from config.utils import add_separator, validate_positive_int, resource_path,get_grinding_price
+from config.utils import add_separator, validate_positive_int, resource_path,get_grinding_price,get_cutting_price
 from config.ui_utils import update_button_styles
 from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_DEFAULT_DIAMETER, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z
 
@@ -29,8 +30,6 @@ class FrezyUI:
         self.s_value_var = tk.StringVar(value=self.quantity_var.get())
 
         # Zmienne cen !
-
-
         self.current_cutting_price_per_piece = tk.DoubleVar(value = 0.00)
         self.current_lowering_price_per_piece = tk.DoubleVar(value = 0.00)
         self.current_coating_price_per_piece = tk.DoubleVar(value = 0.00)
@@ -41,32 +40,6 @@ class FrezyUI:
         self.current_grinding_price = tk.DoubleVar(value = 0.00)
         self.bonus_price_var = tk.DoubleVar(value=0.0)
         self.total_price_var = tk.DoubleVar(value=0.0)
-
-        '''
-        # Ceny liczone
-        self.current_cutting_price = self.current_cutting_price_per_piece * float(self.quantity_var.get())
-        self.current_lowering_price = self.current_lowering_price_per_piece * float(self.quantity_var.get())
-        self.current_coating_price = self.current_coating_price_per_piece * float(self.quantity_var.get())
-        self.current_grinding_price = self.current_grinding_price_per_piece * float(self.quantity_var.get())
-        self.bonus_price = self.current_cutting_price + self.current_lowering_price
-        self.full_price = self.bonus_price + self.current_grinding_price
-
-        
-        #Debug wejsciowy
-        print(f"🔧: Typ: {self.type_var.get()}")
-        print(f"Typ: {self.type_var.get()}")
-        print(f"Średnica: {self.diameter_var.get()}")
-        print(f"Chwyt: {self.chwyt_var.get()}")
-        print(f"Ilość ostrzy (Z): {self.z_var.get()}")
-        print(f"Ilość sztuk: {self.quantity_var.get()}")
-        print(f"Cięcie: {'TAK' if self.ciecie_var.get() else 'NIE'}")
-        '''
-
-
-
-        # Pierwsza cena
-        #self.current_grinding_price_per_piece.set(get_grinding_price(self.type_var, self.z_var, self.diameter_var,
-         #                                                          self.quantity_var))
 
         # Sekcje UI
         self.create_type_section()
@@ -163,7 +136,9 @@ class FrezyUI:
         tk.Label(frame, text="Ilość sztuk:", font=("Arial", 12)).pack(side="left", padx=5)
         self.quantity_entry = tk.Entry(frame, textvariable=self.quantity_var, width=10)
         self.quantity_entry.pack(side="left", padx=5)
-        self.ciecie_check = tk.Checkbutton(frame, text="Cięcie", variable=self.ciecie_var, command=print("klik"))
+        self.quantity_entry.bind("<KeyRelease>", self.on_quantity_change)
+
+        self.ciecie_check = tk.Checkbutton(frame, text="Cięcie", variable=self.ciecie_var, command=self.update_price_labels)
         self.ciecie_check.pack(side="left", padx=5)
         add_separator(self.top)
 
@@ -202,7 +177,7 @@ class FrezyUI:
             self.s_value_var.set(str(quantity))
 
     def create_powlekanie_section(self):
-        self.powlekanie_menu = CoatingMenu(self.top, self.update_price)
+        self.powlekanie_menu = CoatingMenu(self.top, self.update_price_labels)
         add_separator(self.top)
 
     def create_price_labels(self):
@@ -243,15 +218,6 @@ class FrezyUI:
                                  , anchor='e')
         self.total_price_label.grid(row=2, column=1, sticky='e', padx=5, pady=2)
 
-        '''
-        self.price_label = tk.Label(self.top, text="Cena jednostkowa: 0.00 PLN", font=("Arial", 8))
-        self.price_label.pack(pady=5)
-        self.powlekanie_menu.coating_price_label.pack(pady=5)
-        self.total_price_label = tk.Label(self.top, text="Wartość: 0.00 PLN", font=("Arial", 12, "bold"))
-        self.total_price_label.pack(pady=5)
-        add_separator(self.top)
-        '''
-
     def create_action_buttons(self):
         self.add_button = tk.Button(self.top, text="Dodaj do koszyka", font=("Arial", 12), command=self.add_to_cart)
         self.add_button.pack(pady=5)
@@ -259,17 +225,13 @@ class FrezyUI:
 #--------------------------------------------
     def select_type(self, selected_type):
         self.type_var.set(selected_type)
-        update_button_styles(self.type_buttons, selected_type)
-        self.current_grinding_price_per_piece = get_grinding_price(self.type_var, self.z_var, self.diameter_var,
-                                                                   self.quantity_var)
         self.update_price_labels()
-        print(selected_type)
+        update_button_styles(self.type_buttons, selected_type)
 
     def select_diameter(self, d_value):
         self.diameter_var.set(d_value)
         self.chwyt_var.set(d_value)
-        self.current_grinding_price_per_piece = get_grinding_price(self.type_var, self.z_var, self.diameter_var,
-                                                                   self.quantity_var)
+
         self.update_price_labels()
         update_button_styles(self.diameter_buttons, d_value)
 
@@ -289,14 +251,11 @@ class FrezyUI:
                 self.diameter_var.set(diam_default)
                 return
 
-
             #Korekcja chwytu
             if diam_float > chwyt_float:
                 self.chwyt_var.set(int(math.ceil(diam_float / 2.0)) * 2)
 
             self.diameter_var.set(diam_input)
-            self.current_grinding_price_per_piece = get_grinding_price(self.type_var, self.z_var, self.diameter_var,
-                                                                       self.quantity_var)
             self.update_price_labels()
             update_button_styles(self.diameter_buttons, diam_input)
 
@@ -321,53 +280,95 @@ class FrezyUI:
                     raise ValueError
             except ValueError:
                 self.z_var.set(z_default)
-                z_input = z_default
                 return
             if not validate_positive_int(z_input):
-                self.z_var.set(int(float(z_input)))
+                self.z_var.set(z_default)
                 return
-            self.current_grinding_price_per_piece = get_grinding_price(self.type_var, self.z_var, self.diameter_var,
-                                                                       self.quantity_var)
             self.update_price_labels()
             update_button_styles(self.z_buttons, z_input)
 
     def select_z(self, z_value):
         """Ustawia wybraną ilość ostrzy i aktualizuje styl przycisku."""
         self.z_var.set(z_value)
-        #self.current_grinding_price_per_piece(get_grinding_price(self.type_var, self.z_var, self.diameter_var,
-          #                                                         self.quantity_var))
         self.update_price_labels()
         update_button_styles(self.z_buttons, z_value)
 
     def update_price_labels(self):
-            price = get_grinding_price(
+            #grinding
+            self.grinding_price = get_grinding_price(
                 self.type_var,
                 self.z_var,
                 self.diameter_var,
                 self.quantity_var
             )
 
-            if price is not None:
-                self.current_grinding_price_per_piece.set(price)
+            if self.grinding_price is not None:
+                self.current_grinding_price_per_piece.set(self.grinding_price)
+                self.current_grinding_price.set(self.grinding_price * float(self.quantity_var.get()))
                 self.grinding_price_label.config(
-                    text=f"Cena ostrzenia: {price:.2f} zł / {price * float(self.quantity_var.get()):2f}"
+                    text=f"Cena ostrzenia: {self.current_grinding_price_per_piece.get():.2f} zł / {self.current_grinding_price.get():.2f} zł", font=("Arial", 10)
                 )
             else:
                 self.current_grinding_price_per_piece.set(0.0)
+                self.current_grinding_pric.set(0.0)
                 self.grinding_price_label.config(
                     text="Cena ostrzenia: brak danych"
                 )
+            #CIECIE
+            if self.ciecie_var.get():
+                # Checkbox zaznaczony — dodaj cenę cięcia
+                self.ciecie_price = get_cutting_price(self.diameter_var)
+                self.current_cutting_price_per_piece.set(self.ciecie_price)
+                self.current_cutting_price.set(self.ciecie_price * int(self.quantity_var.get()))
 
+                self.cutting_price_label.config(
 
+                    text=f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
+                         f"{self.current_cutting_price.get():.2f} zł", font=("Arial", 10))
+            else:
+                # Checkbox odznaczony — usuń cenę cięcia
+                self.ciecie_price = 0.00
+                self.current_cutting_price_per_piece.set(self.ciecie_price)
+                self.current_cutting_price.set(self.ciecie_price)
+                self.cutting_price_label.config(
+                    text=f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
+                         f"{self.ciecie_price * int(self.quantity_var.get()):.2f} zł", font=("Arial", 10))
 
+            #TOTAL
+            self.total_price = self.current_grinding_price.get() + self.current_cutting_price.get()
+            self.total_price_var.set(self.total_price)
+            self.total_price_label.config(
+                text=f"Wartość całkowita: {self.total_price_var.get():.2f} zł", font=("Arial", 10))
 
-    def update_price(self):
-        pass
+    def on_quantity_change(self,event=None):
+        quantity_input = self.quantity_var.get()
+        quantity_default = "1"
+        try:
+            if not quantity_input.strip():
+                raise ValueError
+        except ValueError:
+            self.quantity_var.set(quantity_default)
+            return
+        if not validate_positive_int(quantity_input):
+            self.quantity_var.set(quantity_default)
+            return
+        self.update_price_labels()
+
+    def ciecie_price_update(self):
+        if self.ciecie_var.get():
+            # Checkbox zaznaczony — dodaj cenę cięcia
+            self.ciecie_price = get_cutting_price(self.diameter_var)
+            self.cutting_price_label.config(
+
+                text=f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
+                     f"{self.ciecie_price * int(self.quantity_var.get()):.2f} zł", font=("Arial", 10))
+        else:
+            # Checkbox odznaczony — usuń cenę cięcia
+            self.ciecie_price = 0.00
+            self.cutting_price_label.config(
+            text = f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
+            f"{self.ciecie_price * int(self.quantity_var.get()):.2f} zł", font = ("Arial", 10))
+        self.update_price_labels()
 
     def add_to_cart(self):
-        # Tu wrzucisz logikę dodawania do koszyka
-        pass
-
-    def fill_edit_fields(self):
-        # Tu wrzucisz logikę wypełniania pól w trybie edycji
         pass

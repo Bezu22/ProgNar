@@ -23,12 +23,10 @@ def format_price(price):
         return "0.00 PLN"
 
 def validate_positive_int(value):
-    """Sprawdza, czy wartość jest dodatnią liczbą całkowitą."""
-    try:
-        val = int(value)
-        return True if val > 0 else False
-    except (ValueError, TypeError):
-        return False
+    """Sprawdza, czy wartość składa się wyłącznie z cyfr i jest dodatnią liczbą całkowitą."""
+    if isinstance(value, str) and value.isdigit():
+        return int(value) > 0
+    return False
 
 def add_separator(parent, color="#f21821", thickness=1, pady=10):
     """Dodaje wizualny separator."""
@@ -95,12 +93,6 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
         print("Błąd konwersji danych wejściowych")
         return None
 
-    print("Na wejsciu")
-    print(f"Zeby: {num_blades}")
-    print(f"Srednica: {diameter}")
-    print(f"ilosc: {quantity}")
-
-
     cennik_frezy_path = "data/cennik_frezy.json"
     with open(cennik_frezy_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -145,5 +137,45 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
         #debug
         print(f"Typ: {tool_type}, Ostrza: {num_blades}, Średnica: {diameter}, Ilość: {quantity}, Cena: {price_table.get(qty_key)}")
         #pobierz cene
-        print(f"Typ zwracanej wartości: {type(price_table.get(qty_key))}")
         return price_table.get(qty_key)
+
+def get_cutting_price(diameter_var):
+    try:
+        diameter = float(diameter_var.get())
+    except ValueError:
+        print("Błąd konwersji średnicy dla ceny cięcia")
+        return None
+
+    uslugi_cennik_path = "data/cennik_uslugi.json"
+
+    try:
+        with open(uslugi_cennik_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Błąd odczytu pliku cennika: {e}")
+        return None
+
+    ciecie_data = data.get("Ciecie", {}).get("cennik", [])
+    if not ciecie_data:
+        print("Brak danych dla usługi 'Ciecie'")
+        return None
+
+    max_price = None
+
+    for entry in ciecie_data:
+        for zakres, cena in entry.items():
+            try:
+                if " - " in zakres:
+                    min_d, max_d = map(float, zakres.split(" - "))
+                    if min_d <= diameter <= max_d:
+                        return cena
+                else:
+                    # Obsługa pojedynczej wartości np. "10"
+                    if float(zakres) == diameter:
+                        return cena
+                # Zbieramy najwyższą cenę
+                if max_price is None or cena > max_price:
+                    max_price = cena
+            except ValueError:
+                continue
+    return max_price
