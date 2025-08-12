@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from tools_menu.tool_menu import ToolMenu
-from config.utils import load_pricing_data, format_price, validate_positive_int, validate_blades, get_price_for_quantity, add_separator, resource_path
+from config.utils import validate_positive_int, validate_blades, get_price_for_quantity, add_separator, resource_path
 from config.ui_utils import update_button_styles
 from config.cart_io import save_cart_to_file
 from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z, FREZY_DEFAULT_DIAMETER
@@ -215,10 +215,12 @@ class FrezyMenu(ToolMenu):
                 self.top.destroy()
 
             if self.main_app:
-                self.main_app.cart.update_cart_display(self.main_app.cart_tree,
-                                                      self.main_app.suma_uslug_label,
-                                                      self.main_app.suma_powlekanie_label,
-                                                      self.main_app.suma_total_label)
+                self.main_app.cart.update_cart_display(
+                    self.main_app.cart_tree,
+                    self.main_app.bottom.suma_uslug_label,
+                    self.main_app.bottom.suma_powlekanie_label,
+                    self.main_app.bottom.suma_total_label
+                )
                 if self.edit_index is None:
                     self.top.focus_force()  # Przywraca fokus na okno FrezyMenu po dodaniu
 

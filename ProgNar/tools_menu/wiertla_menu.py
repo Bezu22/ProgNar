@@ -83,18 +83,18 @@ class WiertlaMenu(ToolMenu):
             self.ik_value_var.set(self.quantity_var.get())
         self.update_price()
 
-    def validate_ik_value(self, event=None):
-        """Waliduje wartość w polu IK."""
-        if not self.ik_var.get():
+    def validate_s_value(self, event=None):
+        """Waliduje wartość w polu S."""
+        if not self.s_var.get():
             return
-        ik_value = self.ik_value_var.get()
+        s_value = self.s_value_var.get()
         try:
-            ik_int = int(ik_value)
+            s_int = int(s_value)
             quantity = validate_positive_int(self.quantity_var.get())
-            if ik_int > quantity or ik_int < 0:
-                self.ik_value_var.set(str(quantity))
+            if s_int > quantity or s_int < 0:
+                self.s_value_var.set(str(quantity))
         except ValueError:
-            self.ik_value_var.set(self.quantity_var.get())
+            self.s_value_var.set(self.quantity_var.get())
 
     def map_diameter_to_range(self, diameter):
         """Mapuje średnicę na zakres z pliku cennik_wiertla.json."""
@@ -279,10 +279,12 @@ class WiertlaMenu(ToolMenu):
                 self.top.destroy()
 
             if self.main_app:
-                self.main_app.cart.update_cart_display(self.main_app.cart_tree,
-                                                      self.main_app.suma_uslug_label,
-                                                      self.main_app.suma_powlekanie_label,
-                                                      self.main_app.suma_total_label)
+                self.main_app.cart.update_cart_display(
+                    self.main_app.cart_tree,
+                    self.main_app.bottom.suma_uslug_label,
+                    self.main_app.bottom.suma_powlekanie_label,
+                    self.main_app.bottom.suma_total_label
+                )
                 if self.edit_index is None:
                     self.top.focus_force()  # Przywraca fokus na okno WiertlaMenu po dodaniu
 
