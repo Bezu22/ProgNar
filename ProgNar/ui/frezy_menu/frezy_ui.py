@@ -1,9 +1,10 @@
 import tkinter as tk
-import math
+from tkinter import ttk
+import math ,json
 from statistics import quantiles
 from tkinter import messagebox
 from tools_menu.powlekanie_menu import CoatingMenu
-from config.utils import add_separator, validate_positive_int, resource_path,get_grinding_price,get_cutting_price
+from config.utils import add_separator, validate_positive_int, resource_path,get_grinding_price,get_cutting_price,get_coating_price
 from config.ui_utils import update_button_styles
 from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_DEFAULT_DIAMETER, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z
 
@@ -18,6 +19,9 @@ class FrezyUI:
         self.top.title("Menu frezów")
         self.top.geometry("500x700")
         self.top.attributes('-topmost', True)
+        #cennik powlok
+        self.coating_data = self.load_coating_json()
+
 
         # Zmienne parametrów
         self.type_var = tk.StringVar(value=FREZY_TYPES[0][1])
@@ -27,7 +31,9 @@ class FrezyUI:
         self.quantity_var = tk.StringVar(value="4")
         self.ciecie_var = tk.BooleanVar(value=False)
         self.s_var = tk.BooleanVar(value=False)
-        self.s_value_var = tk.StringVar(value=self.quantity_var.get())
+        self.s_value_var = tk.StringVar(value=" ")
+        self.coating_var = tk.StringVar(value="BRAK")
+        self.length_var = tk.IntVar(value=100)
 
         # Zmienne cen !
         self.current_cutting_price_per_piece = tk.DoubleVar(value = 0.00)
@@ -150,35 +156,78 @@ class FrezyUI:
         self.s_entry.pack(side="left", padx=5)
 
         self.s_entry.bind("<KeyRelease>", self.validate_s_value)
-        #self.quantity_entry.bind("<KeyRelease>", self.validate_ik_value)  # Walidacja IK przy zmianie ilości sztuk
-
-    def toggle_s_entry(self):
-        """Włącza/wyłącza pole tekstowe Szyjki i ustawia domyślną wartość."""
-        if self.s_var.get():
-            self.s_entry.config(state='normal')
-            self.s_value_var.set(self.quantity_var.get())
-        else:
-            self.s_entry.config(state='disabled')
-            self.s_value_var.set(self.quantity_var.get())
-
-    def validate_s_value(self, event=None):
-        """Waliduje wartość w polu S."""
-        s_value = self.s_value_var.get()
-        quantity_raw = self.quantity_var.get()
-
-        if not validate_positive_int(s_value):
-            self.s_value_var.set(quantity_raw)
-            return
-
-        s_int = int(s_value)
-        quantity = int(quantity_raw)
-
-        if s_int > quantity or s_int < 0:
-            self.s_value_var.set(str(quantity))
 
     def create_powlekanie_section(self):
-        self.powlekanie_menu = CoatingMenu(self.top, self.update_price_labels)
+        self.coating_frame = tk.Frame(self.top)
+        self.coating_frame.pack(pady=3)
+        self.coating_button = tk.Button(self.coating_frame, text="Powłoka", font=("Arial", 12),
+                                        command=self.toggle_coating_options)
+        self.coating_button.pack(pady=5)
+
+        # Kontener na opcje powłoki
+        self.coating_options_frame = tk.Frame(self.coating_frame)
+
+        # Combobox dla powłoki i długości
+        self.coating_combo = ttk.Combobox(self.coating_options_frame, textvariable=self.coating_var, state="readonly", width=30)
+        self.length_combo = ttk.Combobox(self.coating_options_frame, textvariable=self.length_var, state="readonly", width=10)
+        self.coating_combo.bind("<<ComboboxSelected>>", self.on_selection_change)
+        self.length_combo.bind("<<ComboboxSelected>>", self.on_selection_change)
+
         add_separator(self.top)
+
+    def toggle_coating_options(self):
+        """Pokazuje/ukrywa opcje powłoki."""
+        if self.coating_options_frame.winfo_ismapped():
+            self.coating_options_frame.pack_forget()
+            self.coating_button.config(bg="SystemButtonFace", relief="raised")
+            self.length_combo["values"] = []
+            self.coating_var.set(" - ")
+            self.length_var.set(100)
+            self.current_coating_price_per_piece.set(0.00)
+            self.current_coating_price.set(0.00)
+            self.update_price_labels()
+        else:
+            self.coating_options_frame.pack(pady=5)
+            self.coating_options_frame.pack(pady=5)
+            self.coating_button.config(bg="lightgreen", relief="sunken")
+
+            #DANE POWŁOK (do wycaigniecia gdzies pozniej)
+            self.length_options = set()
+            #LISTA TYPOW
+            self.coating_options = ["BRAK"] + list(self.coating_data.keys())
+            self.coating_combo["values"] = self.coating_options
+            #LISTA DLUGOSCI
+            for coating_info in self.coating_data.values():
+                for diameter_range in coating_info.get("zakres_srednicy", []):
+                    for entry in diameter_range.get("dlugosc_calkowita", []):
+                        self.length_options.add(entry["dlugosc"])
+
+            self.length_options = sorted(self.length_options)
+            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
+                "Brak danych"]
+            #Domyslne
+            self.coating_var.set(self.coating_options[1] if len(self.coating_options) > 1 else "BRAK")
+            self.length_var.set(self.length_options[0] if self.length_options else "")
+            self.coating_combo.pack(side="left", padx=5)
+            self.length_combo.pack(side="left", padx=5)
+            if self.coating_var.get() == "BRAK":
+                self.length_combo.config(state="disabled")
+            else:
+                self.length_combo.config(state="readonly")
+            self.update_price_labels()
+
+    def on_selection_change(self, event=None):
+        """Wywołuje callback po zmianie powłoki lub długości."""
+        if self.coating_var.get() == "BRAK":
+            self.length_var.set("")
+            self.length_combo["values"] = []
+            self.length_combo.config(state="disabled")
+        else:
+            self.length_combo["values"] = self.length_options if self.length_options else ["Brak danych"]
+            self.length_combo.config(state="readonly")
+            if self.length_options and not self.length_var.get():
+                self.length_var.set(self.length_options[0])
+        self.update_price_labels()
 
     def create_price_labels(self):
         container = tk.Frame(self.top, border=2, relief='solid')
@@ -189,33 +238,39 @@ class FrezyUI:
         container.columnconfigure(1, weight=1)
 
         # Lewe labele
-        self.cutting_price_label = tk.Label(container, text=f"Cena cięcia: {self.current_cutting_price_per_piece.get():.2f} zł/ "
-                                                f"{self.current_cutting_price.get():.2f} zł", font=("Arial", 10)
-                                , anchor='w')
+        self.cutting_price_label = tk.Label(container,
+                                            text=f"Cena cięcia: {self.current_cutting_price_per_piece.get():.2f} zł/ "
+                                                 f"{self.current_cutting_price.get():.2f} zł", font=("Arial", 10),
+                                            anchor='w')
         self.cutting_price_label.grid(row=0, column=0, sticky='w', padx=5, pady=2)
 
-        self.lowering_price_label = tk.Label(container, text=f"Cena zaniżenia: {self.current_lowering_price_per_piece.get():.2f} zł / "
-                                                f"{self.current_lowering_price.get():.2f} zł", font=("Arial", 10)
-                                , anchor='w')
+        self.lowering_price_label = tk.Label(container,
+                                             text=f"Cena zaniżenia: {self.current_lowering_price_per_piece.get():.2f} zł / "
+                                                  f"{self.current_lowering_price.get():.2f} zł", font=("Arial", 10),
+                                             anchor='w')
         self.lowering_price_label.grid(row=1, column=0, sticky='w', padx=5, pady=2)
 
-        self.coating_price_label = tk.Label(container, text=f"Cena powłoki: {self.current_coating_price_per_piece.get():.2f} zł / "
-                                                f"{self.current_coating_price.get():.2f} zł", font=("Arial", 10)
-                                , anchor='w')
+        self.coating_price_label = tk.Label(container,
+                                            text=f"Cena powłoki: {self.current_coating_price_per_piece.get():.2f} zł / "
+                                                 f"{self.current_coating_price.get():.2f} zł",
+                                            font=("Arial Bold", 14), anchor='w', bg='#FCBABA', borderwidth=3,
+                                            relief='ridge', padx=8, pady=4)
         self.coating_price_label.grid(row=2, column=0, sticky='w', padx=5, pady=2)
 
         # Prawe labele
-        self.grinding_price_label = tk.Label(container, text=f"Cena ostrzenia: {self.current_grinding_price.get():.2f} zł / "
-                                                f"{self.current_grinding_price.get():.2f} zł", font=("Arial", 10)
-                                 , anchor='e')
+        self.grinding_price_label = tk.Label(container,
+                                             text=f"Cena ostrzenia: {self.current_grinding_price.get():.2f} zł / "
+                                                  f"{self.current_grinding_price.get():.2f} zł", font=("Arial", 10),
+                                             anchor='e')
         self.grinding_price_label.grid(row=0, column=1, sticky='e', padx=5, pady=2)
 
-        self.bonus_price_label = tk.Label(container, text=f"Cena usług: {self.bonus_price_var.get():.2f} zł", font=("Arial", 10)
-                                 , anchor='e')
+        self.bonus_price_label = tk.Label(container, text=f"Cena usług: {self.bonus_price_var.get():.2f} zł",
+                                          font=("Arial", 10), anchor='e')
         self.bonus_price_label.grid(row=1, column=1, sticky='e', padx=5, pady=2)
 
-        self.total_price_label = tk.Label(container, text=f"Wartość całkowita: {self.total_price_var.get():.2f} zł", font=("Arial", 10)
-                                 , anchor='e')
+        self.total_price_label = tk.Label(container, text=f"Wartość całkowita: {self.total_price_var.get():.2f} zł",
+                                          font=("Arial Bold", 14), anchor='e', bg='#FCBABA', borderwidth=3,
+                                          relief='ridge', padx=8, pady=4)
         self.total_price_label.grid(row=2, column=1, sticky='e', padx=5, pady=2)
 
     def create_action_buttons(self):
@@ -293,6 +348,33 @@ class FrezyUI:
         self.update_price_labels()
         update_button_styles(self.z_buttons, z_value)
 
+    def toggle_s_entry(self):
+        """Włącza/wyłącza pole tekstowe Szyjki i ustawia domyślną wartość."""
+        if self.s_var.get():
+            self.s_entry.config(state='normal')
+            self.s_value_var.set(self.quantity_var.get())
+            self.update_price_labels()
+        else:
+            self.s_entry.config(state='disabled')
+            self.s_value_var.set(" ")
+            self.update_price_labels()
+
+    def validate_s_value(self, event=None):
+        """Waliduje wartość w polu S."""
+        s_value = self.s_value_var.get()
+        quantity_raw = self.quantity_var.get()
+
+        if not validate_positive_int(s_value):
+            self.s_value_var.set(quantity_raw)
+            return
+
+        s_int = int(s_value)
+        quantity = int(quantity_raw)
+
+        if s_int > quantity or s_int < 0:
+            self.s_value_var.set(str(quantity))
+        self.update_price_labels()
+
     def update_price_labels(self):
             #grinding
             self.grinding_price = get_grinding_price(
@@ -322,7 +404,6 @@ class FrezyUI:
                 self.current_cutting_price.set(self.ciecie_price * int(self.quantity_var.get()))
 
                 self.cutting_price_label.config(
-
                     text=f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
                          f"{self.current_cutting_price.get():.2f} zł", font=("Arial", 10))
             else:
@@ -334,11 +415,71 @@ class FrezyUI:
                     text=f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
                          f"{self.ciecie_price * int(self.quantity_var.get()):.2f} zł", font=("Arial", 10))
 
+            #SZYJKA
+            if self.s_var.get():
+                #Checkbox szyjki zaznaczony
+                self.lowering_price = 10.0
+                self.current_lowering_price_per_piece.set(self.lowering_price)
+                self.current_lowering_price.set(self.lowering_price * int(self.s_value_var.get()))
+                self.lowering_price_label.config(
+                    text=f"Cena zaniżenia: {self.current_lowering_price_per_piece.get():.2f} zł / "
+                         f"{self.current_lowering_price.get():.2f} zł", font=("Arial", 10))
+            else:
+                #checkbox odznaczony
+                self.lowering_price = 0.0
+                self.current_lowering_price_per_piece.set(self.lowering_price)
+                self.current_lowering_price.set(self.lowering_price)
+                self.lowering_price_label.config(
+                    text=f"Cena zaniżenia: {self.lowering_price:.2f} zł / "
+                         f"{self.lowering_price:.2f} zł", font=("Arial", 10))
+
+            #POWLOKA
+            self.coating_price = get_coating_price(self.diameter_var.get(),self.coating_var.get(),self.length_var.get(),self.coating_data)
+            print(f"Po liczeniu ceny: {self.coating_price}")
+            self.current_coating_price_per_piece.set(self.coating_price)
+            self.current_coating_price.set(self.coating_price * int(self.quantity_var.get()))
+            self.coating_price_label.config(
+                text=f"Cena powłoki: {self.current_coating_price_per_piece.get():.2f} zł / "
+                     f"{self.current_coating_price.get():.2f} zł", font=("Arial", 10))
+
+
+            #EXTRAS
+            self.extras_price = self.current_lowering_price.get() + self.current_cutting_price.get()
+            self.bonus_price_var.set(self.extras_price)
+            self.bonus_price_label.config(
+                text=f"Cena usług: {self.bonus_price_var.get():.2f} zł", font=("Arial", 10))
             #TOTAL
             self.total_price = self.current_grinding_price.get() + self.current_cutting_price.get()
             self.total_price_var.set(self.total_price)
             self.total_price_label.config(
                 text=f"Wartość całkowita: {self.total_price_var.get():.2f} zł", font=("Arial", 10))
+
+            '''
+            print(
+                f"Typ: {self.type_var.get()}, "
+                f"Ostrza: {self.z_var.get()}, "
+                f"Średnica: {self.diameter_var.get()}, "
+                f"Ilość: {self.quantity_var.get()}, "
+
+            )
+            print(
+                f"Ciecie: {self.ciecie_var.get()}, "
+                f"Zanizenie: {self.s_var.get()}, "
+                f"Ilosc zanizen: {self.s_value_var.get()}, "
+                f"Powloka: {self.coating_var.get()}, "
+                f"Dlugosc: {self.length_var.get()}"
+            )
+            print(
+                f"Cena szlifowania: {self.current_grinding_price_per_piece.get()}, "
+                f"Cena zanizenia: {self.current_lowering_price_per_piece.get()}, "
+                f"Cena ciecia: {self.current_cutting_price_per_piece.get()}, "
+                f"Cena powloki: {self.current_coating_price_per_piece.get()}"
+
+            )
+            
+            '''
+
+
 
     def on_quantity_change(self,event=None):
         quantity_input = self.quantity_var.get()
@@ -352,6 +493,7 @@ class FrezyUI:
         if not validate_positive_int(quantity_input):
             self.quantity_var.set(quantity_default)
             return
+        self.validate_s_value()
         self.update_price_labels()
 
     def ciecie_price_update(self):
@@ -369,6 +511,10 @@ class FrezyUI:
             text = f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
             f"{self.ciecie_price * int(self.quantity_var.get()):.2f} zł", font = ("Arial", 10))
         self.update_price_labels()
+
+    def load_coating_json(self ):
+        with open(resource_path("data/cennik_powloki.json"), "r", encoding="utf-8") as f:
+            return json.load(f)
 
     def add_to_cart(self):
         pass

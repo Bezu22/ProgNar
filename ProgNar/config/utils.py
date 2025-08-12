@@ -93,7 +93,7 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
         print("Błąd konwersji danych wejściowych")
         return None
 
-    cennik_frezy_path = "data/cennik_frezy.json"
+    cennik_frezy_path = resource_path("data/cennik_frezy.json")
     with open(cennik_frezy_path, "r", encoding="utf-8") as f:
         data = json.load(f)
         #1. Typ
@@ -120,8 +120,14 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
                 if min_d <= diameter <= max_d:
                     price_table = entry["ceny"]
                     break
+                # Track the price table for the highest range
+                if max_d > (locals().get('last_max_d', 0)):
+                    last_max_d = max_d
+                    last_price_table = entry["ceny"]
         else:
-            return None  # średnica poza zakresem
+            # If no range matches, use the price table for the highest range
+            price_table = last_price_table
+
         #Ilosc sztuk
         if quantity == 1:
             qty_key = "1"
@@ -135,7 +141,7 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
             qty_key = "11-20"  # lub inna logika dla większych ilości
 
         #debug
-        print(f"Typ: {tool_type}, Ostrza: {num_blades}, Średnica: {diameter}, Ilość: {quantity}, Cena: {price_table.get(qty_key)}")
+        #print(f"Typ: {tool_type}, Ostrza: {num_blades}, Średnica: {diameter}, Ilość: {quantity}, Cena: {price_table.get(qty_key)}")
         #pobierz cene
         return price_table.get(qty_key)
 
@@ -146,7 +152,7 @@ def get_cutting_price(diameter_var):
         print("Błąd konwersji średnicy dla ceny cięcia")
         return None
 
-    uslugi_cennik_path = "data/cennik_uslugi.json"
+    uslugi_cennik_path = resource_path("data/cennik_uslugi.json")
 
     try:
         with open(uslugi_cennik_path, "r", encoding="utf-8") as f:
@@ -179,3 +185,33 @@ def get_cutting_price(diameter_var):
             except ValueError:
                 continue
     return max_price
+
+def get_coating_price(diameter_var, coating_var, length_var, full_data):
+    """
+    Zwraca cenę jednostkową na podstawie średnicy, powłoki i długości.
+    """
+    try:
+        diameter = float(diameter_var)
+        coating = coating_var
+        length = length_var
+
+        if coating == "BRAK" or not length or diameter <= 0:
+            print("Nie znaleziono powłoki w danych")
+            return 0.0
+
+        coating_info = full_data.get(coating)
+        if not coating_info:
+            print("Nie znaleziono powłoki w danych")
+            return 0.0
+
+        for range_item in coating_info.get("zakres_srednicy", []):
+            if diameter <= range_item.get("srednica_max", 0):
+                for length_item in range_item.get("dlugosc_calkowita", []):
+                    if str(length_item.get("dlugosc")) == str(length):
+                        return float(length_item.get("cena_jednostkowa", 0.0))
+                break
+        return 0.0
+
+    except Exception as e:
+        print("Błąd:", e)
+        return 0.0

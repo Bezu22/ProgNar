@@ -38,7 +38,6 @@ class CoatingMenu:
         self.coating_price_frame = tk.Frame(self.parent)
         self.coating_var = tk.StringVar(value="BRAK")
         self.length_var = tk.StringVar(value="")
-        self.coating_price_label = tk.Label(self.coating_price_frame, text="Cena powłoki: 0.00 PLN", font=("Arial", 10))
 
         # Combobox dla powłoki i długości
         self.coating_combo = ttk.Combobox(self.coating_frame, textvariable=self.coating_var, state="readonly", width=20)
@@ -54,7 +53,6 @@ class CoatingMenu:
             self.coating_button.config(bg="SystemButtonFace", relief="raised")
             self.coating_var.set("BRAK")
             self.length_var.set("")
-            self.coating_price_label.config(text="Cena powłoki: 0.00 PLN")
             self.length_combo["values"] = []
         else:
             self.coating_frame.pack(after=self.coating_button, pady=5)
@@ -66,7 +64,6 @@ class CoatingMenu:
             self.length_var.set(self.length_options[0] if self.length_options else "")
             self.coating_combo.pack(side="left", padx=5)
             self.length_combo.pack(side="left", padx=5)
-            self.coating_price_label.pack()
             if self.coating_var.get() == "BRAK":
                 self.length_combo.config(state="disabled")
             else:
