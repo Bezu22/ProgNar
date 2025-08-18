@@ -196,12 +196,10 @@ def get_coating_price(diameter_var, coating_var, length_var, full_data):
         length = length_var
 
         if coating == "BRAK" or not length or diameter <= 0:
-            print("Nie znaleziono powłoki w danych")
             return 0.0
 
         coating_info = full_data.get(coating)
         if not coating_info:
-            print("Nie znaleziono powłoki w danych")
             return 0.0
 
         for range_item in coating_info.get("zakres_srednicy", []):

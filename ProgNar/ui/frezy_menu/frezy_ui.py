@@ -3,25 +3,27 @@ from tkinter import ttk
 import math ,json
 from statistics import quantiles
 from tkinter import messagebox
-from tools_menu.powlekanie_menu import CoatingMenu
-from config.utils import add_separator, validate_positive_int, resource_path,get_grinding_price,get_cutting_price,get_coating_price
+#from tools_menu.powlekanie_menu import CoatingMenu
+from config.utils import add_separator, validate_positive_int, resource_path, get_grinding_price,get_cutting_price,get_coating_price
 from config.ui_utils import update_button_styles
 from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_DEFAULT_DIAMETER, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z
 
 class FrezyUI:
-    def __init__(self, parent, main_app=None, edit_item=None,on_save=None):
+    def __init__(self, parent, cart, client_name, on_save):
         self.parent = parent
         self.on_save = on_save
-        self.main_app = main_app
-        self.edit_item = edit_item
+        self.cart = cart
+        self.client_name = client_name
+        #self.main_app = main_app
+        #self.edit_item = edit_item
 
         self.top = tk.Toplevel(parent)
         self.top.title("Menu frezów")
         self.top.geometry("500x700")
         self.top.attributes('-topmost', True)
+
         #cennik powlok
         self.coating_data = self.load_coating_json()
-
 
         # Zmienne parametrów
         self.type_var = tk.StringVar(value=FREZY_TYPES[0][1])
@@ -160,74 +162,67 @@ class FrezyUI:
     def create_powlekanie_section(self):
         self.coating_frame = tk.Frame(self.top)
         self.coating_frame.pack(pady=3)
-        self.coating_button = tk.Button(self.coating_frame, text="Powłoka", font=("Arial", 12),
-                                        command=self.toggle_coating_options)
-        self.coating_button.pack(pady=5)
+
+        # Etykieta Powłoka
+        tk.Label(self.coating_frame, text="Powłoka", font=("Arial", 12)).pack(pady=5)
 
         # Kontener na opcje powłoki
         self.coating_options_frame = tk.Frame(self.coating_frame)
+        self.coating_options_frame.pack(pady=5)
 
         # Combobox dla powłoki i długości
-        self.coating_combo = ttk.Combobox(self.coating_options_frame, textvariable=self.coating_var, state="readonly", width=30)
-        self.length_combo = ttk.Combobox(self.coating_options_frame, textvariable=self.length_var, state="readonly", width=10)
+        self.coating_combo = ttk.Combobox(self.coating_options_frame, textvariable=self.coating_var, state="readonly",
+                                          width=30)
+        self.length_combo = ttk.Combobox(self.coating_options_frame, textvariable=self.length_var, state="readonly",
+                                         width=10)
         self.coating_combo.bind("<<ComboboxSelected>>", self.on_selection_change)
         self.length_combo.bind("<<ComboboxSelected>>", self.on_selection_change)
 
+        # DANE POWŁOK
+        self.length_options = set()
+        # LISTA TYPOW
+        self.coating_options = ["BRAK"] + list(self.coating_data.keys())
+        self.coating_combo["values"] = self.coating_options
+        # LISTA DLUGOSCI
+        for coating_info in self.coating_data.values():
+            for diameter_range in coating_info.get("zakres_srednicy", []):
+                for entry in diameter_range.get("dlugosc_calkowita", []):
+                    self.length_options.add(entry["dlugosc"])
+
+        self.length_options = sorted(self.length_options)
+        self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else ["Brak danych"]
+
+        # Domyślne wartości
+        self.coating_var.set(self.coating_options[0])  # Ustawia "BRAK"
+        self.length_var.set(self.length_options[0] if self.length_options else "")  # Ustawia pierwszą długość lub pustą
+        self.coating_combo.pack(side="left", padx=5)
+        self.length_combo.pack(side="left", padx=5)
+
+        # Długość zawsze dostępna
+        self.length_combo.config(state="readonly")
+
+        self.coating_var.trace("w", lambda *args: self.update_price_labels())
         add_separator(self.top)
-
-    def toggle_coating_options(self):
-        """Pokazuje/ukrywa opcje powłoki."""
-        if self.coating_options_frame.winfo_ismapped():
-            self.coating_options_frame.pack_forget()
-            self.coating_button.config(bg="SystemButtonFace", relief="raised")
-            self.length_combo["values"] = []
-            self.coating_var.set(" - ")
-            self.length_var.set(100)
-            self.current_coating_price_per_piece.set(0.00)
-            self.current_coating_price.set(0.00)
-            self.update_price_labels()
-        else:
-            self.coating_options_frame.pack(pady=5)
-            self.coating_options_frame.pack(pady=5)
-            self.coating_button.config(bg="lightgreen", relief="sunken")
-
-            #DANE POWŁOK (do wycaigniecia gdzies pozniej)
-            self.length_options = set()
-            #LISTA TYPOW
-            self.coating_options = ["BRAK"] + list(self.coating_data.keys())
-            self.coating_combo["values"] = self.coating_options
-            #LISTA DLUGOSCI
-            for coating_info in self.coating_data.values():
-                for diameter_range in coating_info.get("zakres_srednicy", []):
-                    for entry in diameter_range.get("dlugosc_calkowita", []):
-                        self.length_options.add(entry["dlugosc"])
-
-            self.length_options = sorted(self.length_options)
-            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
-                "Brak danych"]
-            #Domyslne
-            self.coating_var.set(self.coating_options[1] if len(self.coating_options) > 1 else "BRAK")
-            self.length_var.set(self.length_options[0] if self.length_options else "")
-            self.coating_combo.pack(side="left", padx=5)
-            self.length_combo.pack(side="left", padx=5)
-            if self.coating_var.get() == "BRAK":
-                self.length_combo.config(state="disabled")
-            else:
-                self.length_combo.config(state="readonly")
-            self.update_price_labels()
 
     def on_selection_change(self, event=None):
         """Wywołuje callback po zmianie powłoki lub długości."""
         if self.coating_var.get() == "BRAK":
-            self.length_var.set("")
-            self.length_combo["values"] = []
-            self.length_combo.config(state="disabled")
+            # Przy BRAK ustawiamy domyślną długość, ale combobox pozostaje aktywny
+            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
+                "Brak danych"]
+            if self.length_options and not self.length_var.get():
+                self.length_var.set(self.length_options[0])
+            self.length_combo.config(state="readonly")
         else:
-            self.length_combo["values"] = self.length_options if self.length_options else ["Brak danych"]
+            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
+                "Brak danych"]
             self.length_combo.config(state="readonly")
             if self.length_options and not self.length_var.get():
                 self.length_var.set(self.length_options[0])
-        self.update_price_labels()
+
+        # Aktualizacja cen tylko jeśli etykiety cenowe istnieją
+        if hasattr(self, 'grinding_price_label') and self.grinding_price_label is not None:
+            self.update_price_labels()
 
     def create_price_labels(self):
         container = tk.Frame(self.top, border=2, relief='solid')
@@ -353,27 +348,30 @@ class FrezyUI:
         if self.s_var.get():
             self.s_entry.config(state='normal')
             self.s_value_var.set(self.quantity_var.get())
-            self.update_price_labels()
         else:
             self.s_entry.config(state='disabled')
             self.s_value_var.set(" ")
-            self.update_price_labels()
+        self.validate_s_value()
+        self.update_price_labels()
 
     def validate_s_value(self, event=None):
-        """Waliduje wartość w polu S."""
-        s_value = self.s_value_var.get()
-        quantity_raw = self.quantity_var.get()
-
-        if not validate_positive_int(s_value):
-            self.s_value_var.set(quantity_raw)
+        """Waliduje wartość szyjki i aktualizuje ceny."""
+        if not self.s_var.get():
+            self.s_value_var.set("")
+            self.update_price_labels()
             return
-
-        s_int = int(s_value)
-        quantity = int(quantity_raw)
-
-        if s_int > quantity or s_int < 0:
-            self.s_value_var.set(str(quantity))
-        self.update_price_labels()
+        s_value = self.s_value_var.get().strip()
+        quantity = self.quantity_var.get().strip()
+        try:
+            s_value_int = int(s_value) if s_value else 0
+            quantity_int = int(quantity) if quantity else 1
+            if s_value_int < 0 or s_value_int > quantity_int:
+                raise ValueError("Szyjka musi być liczbą od 0 do ilości sztuk")
+            self.s_value_var.set(str(s_value_int))
+        except ValueError:
+            self.s_value_var.set("1")
+            messagebox.showwarning("Błąd", "Wprowadź poprawną liczbę dla szyjki (0 do ilości sztuk)", parent=self.top)
+        self.update_price_labels()  # Update prices after validation
 
     def update_price_labels(self):
             #grinding
@@ -433,14 +431,19 @@ class FrezyUI:
                     text=f"Cena zaniżenia: {self.lowering_price:.2f} zł / "
                          f"{self.lowering_price:.2f} zł", font=("Arial", 10))
 
-            #POWLOKA
-            self.coating_price = get_coating_price(self.diameter_var.get(),self.coating_var.get(),self.length_var.get(),self.coating_data)
-            print(f"Po liczeniu ceny: {self.coating_price}")
-            self.current_coating_price_per_piece.set(self.coating_price)
-            self.current_coating_price.set(self.coating_price * int(self.quantity_var.get()))
+            # POWLOKA
+            if self.coating_var.get() == "BRAK":
+                self.coating_price = 0.00
+                self.current_coating_price_per_piece.set(self.coating_price)
+                self.current_coating_price.set(self.coating_price)
+            else:
+                self.coating_price = get_coating_price(self.diameter_var.get(), self.coating_var.get(),
+                                                           self.length_var.get(), self.coating_data)
+                self.current_coating_price_per_piece.set(self.coating_price)
+                self.current_coating_price.set(self.coating_price * int(self.quantity_var.get()))
             self.coating_price_label.config(
                 text=f"Cena powłoki: {self.current_coating_price_per_piece.get():.2f} zł / "
-                     f"{self.current_coating_price.get():.2f} zł", font=("Arial", 10))
+                    f"{self.current_coating_price.get():.2f} zł", font=("Arial", 10))
 
 
             #EXTRAS
@@ -517,4 +520,35 @@ class FrezyUI:
             return json.load(f)
 
     def add_to_cart(self):
-        pass
+        # Zbieranie parametrów frezu
+        nazwa = self.type_var.get()
+        if self.s_var.get():
+            nazwa += f" (s:{self.s_value_var.get()})"  # Append (s:X) to Nazwa when s_var is True
+        params = {
+            "Nazwa": nazwa,
+            "Srednica": self.diameter_var.get(),
+            "Ilosc ostrzy": self.z_var.get(),
+            "fiChwyt": self.chwyt_var.get(),
+            "ciecie": "+" if self.ciecie_var.get() else "-",
+            "Ilosc sztuk": int(self.quantity_var.get()),
+            "Uwagi": "-",  # Always set Uwagi to "-"
+            "Powloka": self.coating_var.get(),
+            "Długość całkowita": str(self.length_var.get()),
+        }
+
+        prices = {
+            "Cena ciecia": f"{self.current_cutting_price_per_piece.get():.2f}",
+            "Cena zanieznia": f"{self.current_lowering_price_per_piece.get():.2f}",
+            "Cena powloki": f"{self.current_coating_price_per_piece.get():.2f}" if self.coating_var.get() != "BRAK" else None,
+            "Cena szlifowania": f"{self.current_grinding_price_per_piece.get():.2f}",
+            "Razem ciecie": f"{self.current_cutting_price.get():.2f}",
+            "Razem zanieznia": f"{self.current_lowering_price.get():.2f}",
+            "Razem powloka": f"{self.current_coating_price.get():.2f}" if self.coating_var.get() != "BRAK" else None,
+            "Razem szlifowanie": f"{self.current_grinding_price.get():.2f}",
+            "Razem uslugi": f"{self.bonus_price_var.get():.2f}",
+            "Razem": f"{self.total_price_var.get():.2f}",
+        }
+
+        self.cart.add_item(params, prices, self.client_name)
+        if self.on_save:
+            self.on_save()  # Call the on_save callback to refresh the cart display
