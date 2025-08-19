@@ -125,7 +125,7 @@ class LeftMenu:
 
     def show_frezy_menu(self):
         """Otwiera menu frezów."""
-        FrezyUI(self.root,self.cart, self.client_name,on_save=self.main_app.handle_frezy_save)
+        FrezyUI(self.root,self.cart, self.client_name,self.main_app.handle_frezy_save)
 
     def show_wiertla_menu(self):
         """Otwiera menu wierteł."""

@@ -9,11 +9,12 @@ from config.ui_utils import update_button_styles
 from config.config import FREZY_TYPES, FREZY_DIAMETER_OPTIONS, FREZY_DEFAULT_DIAMETER, FREZY_Z_OPTIONS, FREZY_DEFAULT_Z
 
 class FrezyUI:
-    def __init__(self, parent, cart, client_name, on_save):
+    def __init__(self, parent, cart, client_name, on_save, edit_index=None):
         self.parent = parent
         self.on_save = on_save
         self.cart = cart
         self.client_name = client_name
+        self.edit_index = edit_index
         #self.main_app = main_app
         #self.edit_item = edit_item
 
@@ -36,6 +37,7 @@ class FrezyUI:
         self.s_value_var = tk.StringVar(value=" ")
         self.coating_var = tk.StringVar(value="BRAK")
         self.length_var = tk.IntVar(value=100)
+        self.remarks_var = tk.StringVar(value="-")
 
         # Zmienne cen !
         self.current_cutting_price_per_piece = tk.DoubleVar(value = 0.00)
@@ -59,6 +61,10 @@ class FrezyUI:
         self.create_action_buttons()
 
         self.update_price_labels()
+
+        # Jeśli edytujemy, wypełnij pola danymi z pozycji
+        if edit_index is not None:
+            self.load_item_data()
 
     def create_type_section(self):
         tk.Label(self.top, text="Wybierz typ:", font=("Arial", 12)).pack(pady=5)
@@ -204,26 +210,6 @@ class FrezyUI:
         self.coating_var.trace("w", lambda *args: self.update_price_labels())
         add_separator(self.top)
 
-    def on_selection_change(self, event=None):
-        """Wywołuje callback po zmianie powłoki lub długości."""
-        if self.coating_var.get() == "BRAK":
-            # Przy BRAK ustawiamy domyślną długość, ale combobox pozostaje aktywny
-            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
-                "Brak danych"]
-            if self.length_options and not self.length_var.get():
-                self.length_var.set(self.length_options[0])
-            self.length_combo.config(state="readonly")
-        else:
-            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
-                "Brak danych"]
-            self.length_combo.config(state="readonly")
-            if self.length_options and not self.length_var.get():
-                self.length_var.set(self.length_options[0])
-
-        # Aktualizacja cen tylko jeśli etykiety cenowe istnieją
-        if hasattr(self, 'grinding_price_label') and self.grinding_price_label is not None:
-            self.update_price_labels()
-
     def create_price_labels(self):
         container = tk.Frame(self.top, border=2, relief='solid')
         container.pack(pady=3, fill='x')
@@ -355,23 +341,44 @@ class FrezyUI:
         self.update_price_labels()
 
     def validate_s_value(self, event=None):
-        """Waliduje wartość szyjki i aktualizuje ceny."""
-        if not self.s_var.get():
-            self.s_value_var.set("")
-            self.update_price_labels()
-            return
+        """Waliduje wartość szyjki i aktualizuje ceny bez komunikatów."""
+        self.s_default = self.quantity_var.get().strip()
         s_value = self.s_value_var.get().strip()
         quantity = self.quantity_var.get().strip()
+
         try:
-            s_value_int = int(s_value) if s_value else 0
+            s_value_int = int(s_value)
             quantity_int = int(quantity) if quantity else 1
-            if s_value_int < 0 or s_value_int > quantity_int:
-                raise ValueError("Szyjka musi być liczbą od 0 do ilości sztuk")
-            self.s_value_var.set(str(s_value_int))
+
+            if s_value_int < 0 or s_value_int > quantity_int or s_value_int == 0:
+                self.s_value_var.set(self.s_default)
+            else:
+                self.s_value_var.set(str(s_value_int))
         except ValueError:
-            self.s_value_var.set("1")
-            messagebox.showwarning("Błąd", "Wprowadź poprawną liczbę dla szyjki (0 do ilości sztuk)", parent=self.top)
-        self.update_price_labels()  # Update prices after validation
+            # W przypadku pustego pola lub niepoprawnej wartości
+            self.s_value_var.set(self.s_default)
+
+        self.update_price_labels()
+
+    def on_selection_change(self, event=None):
+        """Wywołuje callback po zmianie powłoki lub długości."""
+        if self.coating_var.get() == "BRAK":
+            # Przy BRAK ustawiamy domyślną długość, ale combobox pozostaje aktywny
+            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
+                "Brak danych"]
+            if self.length_options and not self.length_var.get():
+                self.length_var.set(self.length_options[0])
+            self.length_combo.config(state="readonly")
+        else:
+            self.length_combo["values"] = [str(l) for l in self.length_options] if self.length_options else [
+                "Brak danych"]
+            self.length_combo.config(state="readonly")
+            if self.length_options and not self.length_var.get():
+                self.length_var.set(self.length_options[0])
+
+        # Aktualizacja cen tylko jeśli etykiety cenowe istnieją
+        if hasattr(self, 'grinding_price_label') and self.grinding_price_label is not None:
+            self.update_price_labels()
 
     def update_price_labels(self):
             #grinding
@@ -527,28 +534,127 @@ class FrezyUI:
         params = {
             "Nazwa": nazwa,
             "Srednica": self.diameter_var.get(),
-            "Ilosc ostrzy": self.z_var.get(),
             "fiChwyt": self.chwyt_var.get(),
-            "ciecie": "+" if self.ciecie_var.get() else "-",
+            "Ilosc ostrzy": self.z_var.get(),
             "Ilosc sztuk": int(self.quantity_var.get()),
-            "Uwagi": "-",  # Always set Uwagi to "-"
+            "ciecie": "+" if self.ciecie_var.get() else "-",
             "Powloka": self.coating_var.get(),
             "Długość całkowita": str(self.length_var.get()),
+            "Uwagi": self.remarks_var.get()
         }
 
         prices = {
-            "Cena ciecia": f"{self.current_cutting_price_per_piece.get():.2f}",
-            "Cena zanieznia": f"{self.current_lowering_price_per_piece.get():.2f}",
-            "Cena powloki": f"{self.current_coating_price_per_piece.get():.2f}" if self.coating_var.get() != "BRAK" else None,
             "Cena szlifowania": f"{self.current_grinding_price_per_piece.get():.2f}",
-            "Razem ciecie": f"{self.current_cutting_price.get():.2f}",
-            "Razem zanieznia": f"{self.current_lowering_price.get():.2f}",
-            "Razem powloka": f"{self.current_coating_price.get():.2f}" if self.coating_var.get() != "BRAK" else None,
             "Razem szlifowanie": f"{self.current_grinding_price.get():.2f}",
+            "Cena powlekania": f"{self.current_coating_price_per_piece.get():.2f}" if self.coating_var.get() != "BRAK" else "-",
+            "Razem powloka": f"{self.current_coating_price.get():.2f}" if self.coating_var.get() != "BRAK" else "-",
+            "Cena ciecia": f"{self.current_cutting_price_per_piece.get():.2f}",
+            "Razem ciecie": f"{self.current_cutting_price.get():.2f}",
+            "Cena zanieznia": f"{self.current_lowering_price_per_piece.get():.2f}",
+            "Razem zanieznia": f"{self.current_lowering_price.get():.2f}",
             "Razem uslugi": f"{self.bonus_price_var.get():.2f}",
             "Razem": f"{self.total_price_var.get():.2f}",
         }
 
-        self.cart.add_item(params, prices, self.client_name)
+        if self.edit_index is not None:
+            # Aktualizuj istniejącą pozycję
+            self.cart.items[self.edit_index] = params | prices
+            self.cart.save_to_file(self.client_name)
+        else:
+            # Dodaj nową pozycję
+            self.cart.add_item(params, prices, self.client_name)
+
         if self.on_save:
             self.on_save()  # Call the on_save callback to refresh the cart display
+
+    def load_item_data(self):
+        """Wypełnia pola danymi edytowanej pozycji."""
+        item = self.cart.items[self.edit_index]
+        #TYP
+        type = item["Nazwa"].split(" (s:")[0]  # Usuń (s:X) jeśli istnieje
+        self.select_type(type)
+        #SREDNICE
+        new_diam = item["Srednica"]
+        self.diameter_var.set(new_diam)
+        update_button_styles(self.diameter_buttons, new_diam)
+        self.chwyt_var.set(item["fiChwyt"])
+        #zeby
+        new_z = item["Ilosc ostrzy"]
+        self.z_var.set(new_z)
+        update_button_styles(self.z_buttons, new_z)
+
+        self.quantity_var.set(str(item["Ilosc sztuk"]))
+        self.ciecie_var.set(item["ciecie"] == "+")
+        self.coating_var.set(item["Powloka"])
+        self.length_var.set(item["Długość całkowita"])
+        if "(s:" in item["Nazwa"]:
+            self.s_var.set(True)
+            self.s_value_var.set(item["Nazwa"].split("(s:")[1].rstrip(")"))
+            self.s_entry.config(state='normal')
+        else:
+            self.s_var.set(False)
+            self.s_value_var.set(value = " ")
+            self.s_entry.config(state='disabled')
+
+        self.remarks_var.set(item["Uwagi"])
+
+        '''
+        self.type_var = tk.StringVar(value=FREZY_TYPES[0][1])
+        self.diameter_var = tk.StringVar(value=FREZY_DEFAULT_DIAMETER)
+        self.chwyt_var = tk.StringVar(value=FREZY_DEFAULT_DIAMETER)
+        self.z_var = tk.StringVar(value=FREZY_DEFAULT_Z)
+        self.quantity_var = tk.StringVar(value="4")
+        self.ciecie_var = tk.BooleanVar(value=False)
+        self.s_var = tk.BooleanVar(value=False)
+        self.s_value_var = tk.StringVar(value=" ")
+        self.coating_var = tk.StringVar(value="BRAK")
+        self.length_var = tk.IntVar(value=100)
+        
+        print("Wczytane wartosci")
+        print(f"nazwa/typ: {self.type_var.get()}")
+        print(f"srednica: {self.diameter_var.get()}"),
+        print(f"srednica chwyt: {self.chwyt_var.get()}")
+        print(f"zeby: {self.z_var.get()}")
+        print(f"ilosc: {self.quantity_var.get()}")
+        print(f"ciecie: {self.ciecie_var.get()}")
+        print(f"szyjka bool: {self.s_var.get()}")
+        print(f"szyjka ilosc: {self.s_value_var.get()}")
+        print(f"powloka : {self.coating_var.get()}")
+        print(f"dlugosc: {self.length_var.get()}")
+        '''
+        # Wypełnianie zmiennych cenowych
+        self.current_grinding_price_per_piece.set(float(item["Cena szlifowania"]))
+        self.current_grinding_price.set(float(item["Razem szlifowanie"]))
+        self.current_cutting_price_per_piece.set(float(item["Cena ciecia"]))
+        self.current_cutting_price.set(float(item["Razem ciecie"]))
+        self.current_lowering_price_per_piece.set(float(item["Cena zanieznia"]))
+        self.current_lowering_price.set(float(item["Razem zanieznia"]))
+        self.bonus_price_var.set(float(item["Razem uslugi"]))
+        self.total_price_var.set(float(item["Razem"]))
+
+        try:
+            self.current_coating_price_per_piece.set(float(item["Cena powlekania"]))
+            self.current_coating_price.set(float(item["Razem powloka"]))
+        except ValueError:
+            print("brak cen dla powlekania - ustawiam na 0.0")
+            self.current_coating_price_per_piece.set(0.00)
+            self.current_coating_price.set(0.00)
+
+        '''
+        print("Wczytane ceny")
+        print(f"szlif : {self.current_grinding_price_per_piece.get()}")
+        print(f"szlif caly : {self.current_grinding_price.get()}")
+        print(f"ciecie : {self.current_grinding_price_per_piece.get()}")
+        print(f"ciecie cale : {self.current_grinding_price.get()}")
+        print(f"powloka : {self.current_coating_price_per_piece.get()}")
+        print(f"powloka cala : {self.current_coating_price.get()}")
+        print(f"zanizenie : {self.current_lowering_price_per_piece.get()}")
+        print(f"zaniezenie cala : {self.current_lowering_price.get()}")
+        print(f"uslugi suma : {self.bonus_price_var.get()}")
+        print(f"Wszystko suma: {self.total_price_var.get()}")
+        '''
+
+        self.add_button.config(text= "Zapisz zmiany")
+        self.update_price_labels()
+
+

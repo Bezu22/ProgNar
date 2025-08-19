@@ -3,10 +3,10 @@ import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from config.utils import resource_path
-from tools_menu.frezy_menu import FrezyMenu
-from tools_menu.wiertla_menu import WiertlaMenu
-from tools_menu.pozostale_menu import PozostaleMenu
-from tools_menu.uslugi_menu import UslugiMenu
+from ui.frezy_menu.frezy_ui import FrezyUI
+#from tools_menu.wiertla_menu import WiertlaMenu
+#from tools_menu.pozostale_menu import PozostaleMenu
+#from tools_menu.uslugi_menu import UslugiMenu
 
 class CartMain:
     def __init__(self):
@@ -28,8 +28,8 @@ class CartMain:
             "Długość całkowita": params["Długość całkowita"],
             "Cena szlifowania": prices["Cena szlifowania"],
             "Razem szlifowanie": prices["Razem szlifowanie"],
-            "Cena powlekania": prices["Cena powloki"] if params["Powloka"] != "BRAK" else "-",
-            "Razem powlekania": prices["Razem powloka"] if params["Powloka"] != "BRAK" else "-",
+            "Cena powlekania": prices["Cena powlekania"] if params["Powloka"] != "BRAK" else "-",
+            "Razem powloka": prices["Razem powloka"] if params["Powloka"] != "BRAK" else "-",
             "Cena ciecia": prices["Cena ciecia"],
             "Razem ciecie": prices["Razem ciecie"],
             "Cena zanieznia": prices["Cena zanieznia"],
@@ -128,18 +128,18 @@ class CartMain:
             remarks_tag = "remarks_filled" if uwagi == "✓" else "remarks_empty"
             cart_tree.insert("", tk.END, iid=str(idx), values=(
                 idx + 1,
-                item["Nazwa"],
-                item["Srednica"],
-                item["fiChwyt"],
-                item["Ilosc ostrzy"],
-                item["Ilosc sztuk"],
-                item["ciecie"],
-                item["Cena szlifowania"],
-                item["Razem szlifowanie"],
-                item["Powloka"],
-                item["Długość całkowita"] or "-",
-                item["Cena powlekania"],
-                item["Razem powlekania"],
+                item.get("Nazwa", "-"),
+                item.get("Srednica", "-"),
+                item.get("fiChwyt", "-"),
+                item.get("Ilosc ostrzy", "-"),
+                item.get("Ilosc sztuk", "-"),
+                item.get("ciecie", "-"),
+                item.get("Cena szlifowania", "-"),
+                item.get("Razem szlifowanie", "-"),
+                item.get("Powloka", "-"),
+                item.get("Długość całkowita", "-"),
+                item.get("Cena powlekania", "-"),
+                item.get("Razem powloka", "-"),
                 uwagi
             ), tags=[remarks_tag if i == 13 else "" for i in range(14)])
 
@@ -149,26 +149,32 @@ class CartMain:
         if selected:
             index = cart_tree.index(selected[0])
             self.remove_item(index, client_name)
+            self.update_cart_display(cart_tree)  # Odśwież widok po usunięciu
             return True
-        return False
+        else:
+            messagebox.showwarning("Błąd", "Nie wybrano żadnej pozycji do usunięcia.",
+                                   parent=cart_tree.winfo_toplevel())
+            return False
 
-    def edit_selected(self, cart_tree, root, main_app, edit_index=None):
+    def edit_selected(self,cart_tree,root,cart,client_name,handle_save):
+        cart_tree = cart_tree
+        root = root
+        cart = cart
+        client_name = client_name
+        handle_save = handle_save
+
+        #FrezyUI(self.root, self.cart, self.client_name, self.main_app.handle_frezy_save)
+
         """Edytuje wybrany element z koszyka."""
         selected = cart_tree.selection()
         if selected:
             index = int(selected[0])
             item = self.items[index]
-            if item["Nazwa"] == "Frezy":
-                FrezyMenu(root, self, main_app=main_app, edit_index=index)
-            elif item["Nazwa"] == "Wiertła":
-                WiertlaMenu(root, self, main_app=main_app, edit_index=index)
-            elif item["Nazwa"] == "Pozostałe":
-                PozostaleMenu(root, self, main_app=main_app, edit_index=index)
-            elif item["Nazwa"] == "Usługi":
-                UslugiMenu(root, self, main_app=main_app, edit_index=index)
+            if item["Nazwa"].startswith("Frezy") or item["Nazwa"].startswith("Frez"):
+                FrezyUI(root,cart,client_name,handle_save,index)
             else:
-                messagebox.showwarning("Błąd", "Nieznany typ pozycji.")
+                messagebox.showwarning("Błąd", "Edycja dostępna tylko dla frezów.", parent=root)
             return True
         else:
-            messagebox.showwarning("Błąd", "Nie wybrano żadnej pozycji.")
+            messagebox.showwarning("Błąd", "Nie wybrano żadnej pozycji do edycji.", parent=root)
             return False

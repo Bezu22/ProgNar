@@ -33,7 +33,7 @@ class CartDisplay:
         self.cart_tree.heading("Uwagi", text="Uwagi")
 
         self.cart_tree.column("LP", width=50, anchor=tk.CENTER)
-        self.cart_tree.column("Nazwa", width=100, anchor=tk.CENTER)
+        self.cart_tree.column("Nazwa", width=130, anchor=tk.CENTER)
         self.cart_tree.column("Srednica", width=60, anchor=tk.CENTER)
         self.cart_tree.column("fiChwyt", width=60, anchor=tk.CENTER)
         self.cart_tree.column("Ilosc zebow", width=50, anchor=tk.CENTER)

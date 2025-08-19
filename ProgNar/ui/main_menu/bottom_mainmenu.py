@@ -38,23 +38,30 @@ class BottomSection:
         tk.Button(save_load_frame, text="Wczytaj koszyk", command=self.load_cart, width=10).pack(side=tk.LEFT, padx=2)
 
         # Prawa część
-        right_button_frame = tk.Frame(bottom_frame)
+        right_button_frame = tk.Frame(bottom_frame,relief="solid",bd = 2)
         right_button_frame.pack(side=tk.RIGHT, padx=10)
 
-        tk.Button(right_button_frame, text="Usuń wybraną pozycję", command=self.delete_selected).pack(side=tk.LEFT, padx=5)
-        tk.Button(right_button_frame, text="Edytuj wybraną pozycję", command=self.edit_selected).pack(side=tk.LEFT, padx=5)
+        left_buttons_frame = tk.Frame(right_button_frame,relief='solid' , bd = 1)
+        left_buttons_frame.pack(side = tk.LEFT,anchor = 'nw')
 
-        self.suma_uslug_label = tk.Label(right_button_frame, text="Suma usług: 0.00 PLN")
-        self.suma_uslug_label.pack(pady=5)
+        tk.Button(left_buttons_frame, text="Edytuj wybraną pozycję", command=self.edit_selected).pack(pady=6)
+        tk.Button(left_buttons_frame, text="Usuń wybraną pozycję", command=self.delete_selected).pack(pady = 6)
 
-        self.suma_powlekanie_label = tk.Label(right_button_frame, text="Suma powlekanie: 0.00 PLN")
-        self.suma_powlekanie_label.pack(pady=5)
+        right_labels_frame = tk.Frame(right_button_frame,relief="solid", bd=2)
+        right_labels_frame.pack(side=tk.RIGHT)
 
-        self.suma_total_label = tk.Label(right_button_frame, text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
-        self.suma_total_label.pack(pady=5)
+        self.suma_szlif_label = tk.Label(right_labels_frame, anchor="e", justify="right", text="Suma szlifowanie: 0.00 PLN")
+        self.suma_szlif_label.pack(pady=2,fill = 'x')
+        self.suma_uslug_label = tk.Label(right_labels_frame, anchor="e", justify="right", text="Suma usługi: 0.00 PLN")
+        self.suma_uslug_label.pack(pady=2,fill = 'x')
+        self.suma_powlekanie_label = tk.Label(right_labels_frame, anchor="e", justify="right", text="Suma powlekanie: 0.00 PLN")
+        self.suma_powlekanie_label.pack(pady=2,fill = 'x')
+
+        self.suma_total_label = tk.Label(right_labels_frame, anchor="e", justify="right", text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
+        self.suma_total_label.pack(pady=5,fill = 'x')
 
         tk.Button(
-            right_button_frame,
+            right_labels_frame,
             text="RAPORT",
             width=20,
             bg="red",
@@ -75,32 +82,48 @@ class BottomSection:
         zanizenia_count = 0
         zanizenia_total = 0.0
         uslugi_total = 0.0
+        szlifowanie_total = 0.0
         powlekanie_total = 0.0
         total = 0.0
 
         for item in self.cart.items:
+            srednica = float(item.get("Srednica"))
+            razem_ciecie = float(item.get("Razem ciecie"))
+            razen_zanizenia = float(item.get("Razem zanieznia"))
+            razem_szlifowanie = float(item.get("Razem szlifowanie"))
             try:
-                # Cięcie
-                if item["ciecie"] == "+" and float(item["Srednica"]) <= 12:
-                    ciecie_do_12_count += int(item["Ilosc sztuk"])
-                    ciecie_do_12_total += float(item["Razem ciecie"])
-                elif item["ciecie"] == "+" and float(item["Srednica"]) > 12:
-                    ciecie_ponad_12_count += int(item["Ilosc sztuk"])
-                    ciecie_ponad_12_total += float(item["Razem ciecie"])
-                # Zaniżenia
-                if float(item["Cena zanieznia"]) > 0:
-                    zanizenia_count += int(item["Ilosc sztuk"])
-                    zanizenia_total += float(item["Razem zanieznia"])
-                # Usługi
-                uslugi_total += float(item["Razem uslugi"])
-                # Powlekanie
-                if item["Powloka"] != "BRAK":
-                    powlekanie_total += float(item["Razem powlekania"])
-                # Całkowita suma
-                total += float(item["Razem"])
-            except (ValueError, KeyError):
+                razem_powlekanie = float(item.get("Razem powloka"))
+            except ValueError:
+                razem_powlekanie = 0.0
                 continue
 
+
+            if srednica < 12.1:
+                ciecie_do_12_total += razem_ciecie
+                ciecie_do_12_count += 1
+            else:
+                ciecie_ponad_12_total += razem_ciecie
+                ciecie_ponad_12_count += 1
+
+            zanizenia_total += razen_zanizenia
+
+            szlifowanie_total += razem_szlifowanie
+
+            uslugi_total = ciecie_ponad_12_total + ciecie_do_12_total + zanizenia_total
+
+            powlekanie_total += razem_powlekanie
+
+
+            total = szlifowanie_total + uslugi_total + powlekanie_total
+
+            #Zapis CENOWY
+        zanizenia_count = int(zanizenia_total / 10)
+
+        self.suma_ciecie_do_12.config(text=f"Cięcie do D12: {ciecie_do_12_count} szt. {ciecie_do_12_total:.2f} PLN")
+        self.suma_ciecie_ponad_12.config(text=f"Cięcie ponad D12: {ciecie_ponad_12_count} szt. {ciecie_ponad_12_total:.2f} PLN")
+        self.suma_zanizenia.config(text=f"Zaniżenia: {zanizenia_count} szt. {zanizenia_total:.2f} PLN")
+
+        '''
         self.suma_ciecie_do_12.config(text=f"Cięcie do D12: {ciecie_do_12_count} szt. {ciecie_do_12_total:.2f} PLN")
         self.suma_ciecie_ponad_12.config(text=f"Cięcie ponad D12: {ciecie_ponad_12_count} szt. {ciecie_ponad_12_total:.2f} PLN")
         self.suma_zanizenia.config(text=f"Zaniżenia: {zanizenia_count} szt. {zanizenia_total:.2f} PLN")
@@ -108,18 +131,21 @@ class BottomSection:
         self.suma_uslug_label.config(text=f"Suma usług: {uslugi_total:.2f} PLN")
         self.suma_powlekanie_label.config(text=f"Suma powlekanie: {powlekanie_total:.2f} PLN")
         self.suma_total_label.config(text=f"Suma: {total:.2f} PLN")
+        '''
 
     def delete_selected(self):
         """Usuwa wybraną pozycję i aktualizuje etykiety cen."""
         if self.cart.delete_selected(self.cart_tree, self.client_name):
-            self.cart.update_cart_display(self.cart_tree)
-            self.update_price_labels()
+            self.update_price_labels()  # Aktualizuj etykiety cen po usunięciu
+        # Widok koszyka jest już aktualizowany w CartMain.delete_selected
 
     def edit_selected(self):
-        """Edytuje wybraną pozycję i aktualizuje etykiety cen."""
-        if self.cart.edit_selected(self.cart_tree, self.root, self):
-            self.cart.update_cart_display(self.cart_tree)
-            self.update_price_labels()
+        self.cart.edit_selected(self.cart_tree,
+                                   self.root,self.cart,
+                                   self.client_name,self.main_app.handle_frezy_save)
+
+
+
 
     def clear_cart(self):
         """Czyści koszyk i aktualizuje etykiety cen."""
