@@ -48,6 +48,7 @@ class ToolPricingApp:
     def handle_frezy_save(self):
         """Handles the save action from FrezyUI to refresh the cart display."""
         self.cart.update_cart_display(self.cart_tree)  # Directly update the cart display
+        self.bottom.update_price_labels()
 
     def generate_report(self):
         generate_report(self.client_name, self)
