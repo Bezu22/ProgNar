@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from config.utils import resource_path
 from ui.frezy_menu.frezy_ui import FrezyUI
+from ui.wiertla_menu.wiertla_ui import WiertlaUI
 #from tools_menu.wiertla_menu import WiertlaMenu
 #from tools_menu.pozostale_menu import PozostaleMenu
 #from tools_menu.uslugi_menu import UslugiMenu
@@ -32,11 +33,17 @@ class CartMain:
             "Razem powloka": prices["Razem powloka"] if params["Powloka"] != "BRAK" else "-",
             "Cena ciecia": prices["Cena ciecia"],
             "Razem ciecie": prices["Razem ciecie"],
-            "Cena zanieznia": prices["Cena zanieznia"],
-            "Razem zanieznia": prices["Razem zanieznia"],
             "Razem uslugi": prices["Razem uslugi"],
             "Razem": prices["Razem"]
         }
+        if "Stopnie" in params:
+            item["Stopnie"] = params["Stopnie"]
+
+        if "Cena zanieznia" in prices:
+            item["Cena zanieznia"] = prices["Cena zanieznia"]
+        if "Razem zanieznia" in prices:
+            item["Razem zanieznia"] = prices["Razem zanieznia"]
+
         self.items.append(item)
         self.save_to_file(client_name)
 
@@ -61,7 +68,7 @@ class CartMain:
             }
             with open(self.filename, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
-            print(f"Zapisano koszyk do pliku: {self.filename}")
+            print(f"Zapisano koszyk")
             return True
         except Exception as e:
             messagebox.showerror("Błąd", f"Nie udało się zapisać koszyka: {str(e)}")
@@ -172,8 +179,12 @@ class CartMain:
             item = self.items[index]
             if item["Nazwa"].startswith("Frezy") or item["Nazwa"].startswith("Frez"):
                 FrezyUI(root,cart,client_name,handle_save,index)
+                return
+            if item["Nazwa"].startswith("Wiertlo") :
+                WiertlaUI(root,cart,client_name,handle_save,index)
+                return
             else:
-                messagebox.showwarning("Błąd", "Edycja dostępna tylko dla frezów.", parent=root)
+                messagebox.showwarning("Błąd", "Problem.", parent=root)
             return True
         else:
             messagebox.showwarning("Błąd", "Nie wybrano żadnej pozycji do edycji.", parent=root)

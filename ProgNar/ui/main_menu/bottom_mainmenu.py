@@ -93,13 +93,12 @@ class BottomSection:
             srednica = float(item.get("Srednica"))
             ilosc_sztuk = int(item.get("Ilosc sztuk"))
             razem_ciecie = float(item.get("Razem ciecie"))
-            razem_zanizenia = float(item.get("Razem zanieznia"))
+            razem_zanizenia = float(item.get("Razem zanieznia", 0))
             razem_szlifowanie = float(item.get("Razem szlifowanie"))
 
             try:
                 test_powloka = float(item.get("Razem powloka"))
                 razem_powlekanie = float(item.get("Razem powloka"))
-                print(f"{test_powloka}")
             except ValueError:
                 razem_powlekanie = 0.0
 
@@ -118,7 +117,6 @@ class BottomSection:
             self.powlekanie_total += razem_powlekanie
 
             self.total = self.szlifowanie_total + self.uslugi_total + self.powlekanie_total
-            print(f"{self.powlekanie_total}")
 
             # Zapis CENOWY
         zanizenia_count = int(self.zanizenia_total / 10)
@@ -140,7 +138,7 @@ class BottomSection:
     def edit_selected(self):
         self.cart.edit_selected(self.cart_tree,
                                    self.root,self.cart,
-                                   self.client_name,self.main_app.handle_frezy_save)
+                                   self.client_name,self.main_app.handle_save)
 
     def clear_cart(self):
         """Czyści koszyk i aktualizuje etykiety cen."""
