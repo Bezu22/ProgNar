@@ -1,7 +1,6 @@
 import tkinter as tk
-from tkinter import ttk
-from config.doc_report import generate_report
-from tools_menu.remarks_menu import RemarksMenu
+#from config.doc_report import generate_report
+from config.utils import resource_path
 from ui.main_menu.bottom_mainmenu import BottomSection
 from ui.main_menu.cart_display import CartDisplay
 from ui.main_menu.left_main_menu import LeftMenu
@@ -13,6 +12,7 @@ class ToolPricingApp:
         self.root = root
         self.root.title("ProgNar – System Regeneracji i Wyceny Narzędzi")
         self.root.geometry("1500x500")
+        self.root.iconbitmap(True,resource_path("img/icon.ico"))
         self.cart = CartMain()
         self.client_name = tk.StringVar(value="- -")
         self.cart.load_from_file(self.client_name)
@@ -41,12 +41,8 @@ class ToolPricingApp:
             main_app = self
         )
 
-    def handle_tree_click(self, index, cart_tree):
-        """Obsługuje kliknięcie w tabelę koszyka."""
-        pass  # Ignored for now, as per request
-
     def handle_save(self):
-        """Handles the save action from FrezyUI to refresh the cart display."""
+        """Handles the save action"""
         self.cart.update_cart_display(self.cart_tree)  # Directly update the cart display
         self.bottom.update_price_labels()
 

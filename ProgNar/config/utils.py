@@ -236,3 +236,5 @@ def get_coating_price(diameter_var, coating_var, length_var, full_data):
     except Exception as e:
         print("Błąd:", e)
         return 0.0
+
+

@@ -3,7 +3,6 @@ from tkinter import messagebox
 import json
 import os
 from config.utils import resource_path
-from config.cart_io import save_cart_to_file
 from config.client_utils import get_client_data
 
 class ClientMenu:

@@ -18,5 +18,10 @@
         "name": "Klient",
         "address": "pilsudzkiego 12",
         "contact": "email@tudny"
+    },
+    {
+        "name": "Test",
+        "address": "opolska 22",
+        "contact": "email@trudny"
     }
 ]

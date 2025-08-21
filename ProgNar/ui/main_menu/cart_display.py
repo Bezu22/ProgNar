@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from tools_menu.remarks_menu import RemarksMenu
+from core.notes_main import NotesMenu
 
 class CartDisplay:
     def __init__(self, parent, root, cart, main_app):
@@ -77,7 +77,7 @@ class CartDisplay:
                 selected = self.cart_tree.selection()
                 if selected:
                     index = int(selected[0])
-                    RemarksMenu(self.root, self.cart, index, self.main_app)
+                    NotesMenu(self.root, self.cart, index, self.main_app)
 
     def get_cart_tree(self):
         """Zwraca obiekt Treeview koszyka."""

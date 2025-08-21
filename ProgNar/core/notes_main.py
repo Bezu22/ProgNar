@@ -1,8 +1,7 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-from config.cart_io import save_cart_to_file
+from tkinter import messagebox
 
-class RemarksMenu:
+class NotesMenu:
     """Klasa zarządzająca oknem edycji uwag dla pozycji w koszyku."""
 
     def __init__(self, parent, cart, item_index, main_app):
@@ -14,14 +13,16 @@ class RemarksMenu:
             item_index: Indeks edytowanej pozycji w koszyku.
             main_app: Referencja do głównej aplikacji (ToolPricingApp).
         """
+        self.parent = parent
         self.cart = cart
         self.item_index = item_index
         self.main_app = main_app
 
         # Tworzenie okna
         self.window = tk.Toplevel(parent)
+        self.center_window(self.window, 400, 300)
         self.window.title("Edycja uwag")
-        self.window.geometry("400x300")
+        #self.window.geometry("400x300")
         self.window.transient(parent)
         self.window.grab_set()
 
@@ -69,6 +70,17 @@ class RemarksMenu:
             bg="#f44336",
             fg="white"
         ).pack(pady=5)
+
+    def center_window(self, window, width=400, height=300):
+        window.update_idletasks()  # Upewnia się, że rozmiary są aktualne
+
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+
+        window.geometry(f"{width}x{height}+{x}+{y}")
 
     def toggle_remarks_field(self):
         """Włącza/wyłącza pole tekstowe na podstawie stanu checkboxa."""
