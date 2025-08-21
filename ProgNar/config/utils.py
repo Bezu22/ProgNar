@@ -85,6 +85,10 @@ def resource_path(relative_path):
 def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var):
     #konwersja ze StripVar
     tool_type = tool_type_var.get().strip()
+    #Brak cennika na dlugie wiertla
+    #tymaczasowo przyjmujemy ceny normalnych
+    if tool_type == "Wiertlo długie":
+        tool_type = "Wiertlo"
     try:
         num_blades = int(num_blades_var.get().strip())
         diameter = float(diameter_var.get().replace(",", ".").strip())
@@ -94,19 +98,38 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
         return None
 
     cennik_frezy_path = resource_path("data/cennik_frezy.json")
-    with open(cennik_frezy_path, "r", encoding="utf-8") as f:
+    cennik_wiertla_path = resource_path("data/cennik_wiertla.json")
+    if tool_type.startswith("Wiert"):
+        wybrany_cennik = cennik_wiertla_path
+    elif tool_type.startswith("Frez"):
+        wybrany_cennik = cennik_frezy_path
+    else:
+        print("Nieznany cennik")
+        wybrany_cennik = cennik_frezy_path
+
+    with open(wybrany_cennik, "r", encoding="utf-8") as f:
         data = json.load(f)
         #1. Typ
         tool_data = data.get(tool_type)
         if not tool_data:
             print("Brak Tool Type")
             return None
+
         #Ilosc ostrzy
-        blade_category = "2-4" if 2 <= num_blades <= 4 else "pozostale"
-        blade_data = tool_data["ilosc_ostrzy"].get(blade_category)
-        if not blade_data:
-            print("Brak ilsoci ostrzy")
-            return None
+        if tool_type.startswith("Frez"):
+            blade_category = "2-4" if 2 <= num_blades <= 4 else "pozostale"
+            blade_data = tool_data["ilosc_ostrzy"].get(blade_category)
+            if not blade_data:
+                print("Brak ilsoci ostrzy")
+                return None
+        else:
+            #if tool_type.startswith("Wiert"):
+            blade_category = "2"
+            blade_data = tool_data["ilosc_ostrzy"].get(blade_category)
+            if not blade_data:
+                print("Brak ilsoci ostrzy")
+                return None
+
         #zakres srednicy
         for entry in blade_data["cennik"]:
             zakres = entry["zakres_srednicy"]
@@ -196,12 +219,10 @@ def get_coating_price(diameter_var, coating_var, length_var, full_data):
         length = length_var
 
         if coating == "BRAK" or not length or diameter <= 0:
-            print("Nie znaleziono powłoki w danych")
             return 0.0
 
         coating_info = full_data.get(coating)
         if not coating_info:
-            print("Nie znaleziono powłoki w danych")
             return 0.0
 
         for range_item in coating_info.get("zakres_srednicy", []):

@@ -4,6 +4,7 @@ from config.cart_io import save_cart_to_file
 
 class RemarksMenu:
     """Klasa zarządzająca oknem edycji uwag dla pozycji w koszyku."""
+
     def __init__(self, parent, cart, item_index, main_app):
         """
         Inicjalizuje okno edycji uwag.
@@ -29,7 +30,7 @@ class RemarksMenu:
         self.main_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
         # Checkbox do aktywacji pola uwag
-        current_remarks = self.cart.items[item_index]['params'].get('Uwagi', '-')
+        current_remarks = self.cart.items[self.item_index].get('Uwagi', '-')
         self.remarks_active_var = tk.BooleanVar(value=current_remarks != '-')
         tk.Checkbutton(
             self.main_frame,
@@ -38,11 +39,11 @@ class RemarksMenu:
             command=self.toggle_remarks_field,
             font=("Arial", 12),
             bg="#f0f0f0"
-        ).pack(anchor="nw", pady=1)
+        ).pack(anchor="nw", pady=5)
 
         # Pole tekstowe na uwagi (3 linie)
         self.remarks_text = tk.Text(self.main_frame, height=3, width=40, font=("Arial", 10))
-        self.remarks_text.pack(pady=1,expand=True,anchor="nw")
+        self.remarks_text.pack(pady=5, fill=tk.BOTH, expand=True)
         if current_remarks != '-':
             self.remarks_text.insert(tk.END, current_remarks)
             self.remarks_text.config(state='normal', bg="white")
@@ -85,22 +86,17 @@ class RemarksMenu:
             if not remarks:
                 messagebox.showwarning("Błąd", "Pole uwag nie może być puste, jeśli jest aktywne.")
                 return
-            self.cart.items[self.item_index]['params']['Uwagi'] = remarks
+            self.cart.items[self.item_index]['Uwagi'] = remarks
         else:
-            self.cart.items[self.item_index]['params']['Uwagi'] = '-'
+            self.cart.items[self.item_index]['Uwagi'] = '-'
 
         # Zapis do pliku tymczasowego
         try:
-            save_cart_to_file(self.cart, self.main_app.client_name)
+            self.cart.save_to_file(self.main_app.client_name)
         except Exception as e:
             messagebox.showerror("Błąd", f"Nie udało się zapisać uwag: {str(e)}")
 
         # Aktualizacja widoku koszyka
-        self.main_app.cart.update_cart_display(
-            self.main_app.cart_tree,
-            self.main_app.suma_uslug_label,
-            self.main_app.suma_powlekanie_label,
-            self.main_app.suma_total_label
-        )
+        self.cart.update_cart_display(self.main_app.cart_tree)
 
         self.window.destroy()

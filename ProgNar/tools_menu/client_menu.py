@@ -203,7 +203,7 @@ class ClientMenu:
             self.main_app.temp_client_data.clear()
 
     def exit_client_menu(self):
-        """Zamyka okno, aktualizuje nazwę klienta i zapisuje koszyk oraz tymczasowe dane."""
+        """Zamyka okno, aktualizuje nazwę klienta, zapisuje koszyk i odświeża wyświetlanie koszyka."""
         selection = self.client_listbox.curselection()
         if selection:
             index = selection[0]
@@ -226,13 +226,11 @@ class ClientMenu:
                         "address": self.address_var.get().strip(),
                         "contact": self.contact_var.get().strip()
                     })
-        save_cart_to_file(self.main_app.cart, self.main_app.client_name)
-        self.main_app.cart.update_cart_display(
-            self.main_app.cart_tree,
-            self.main_app.bottom.suma_uslug_label,
-            self.main_app.bottom.suma_powlekanie_label,
-            self.main_app.bottom.suma_total_label
-        )
+        # Zapisz koszyk z aktualną nazwą klienta
+        self.main_app.cart.save_to_file(self.main_app.client_name)
+        # Wczytaj koszyk z pliku i zaktualizuj tabelę
+        self.main_app.cart.load_from_file(self.main_app.client_name)
+        self.main_app.cart.update_cart_display(self.main_app.cart_tree)
         self.top.destroy()
 
     def clear_entries(self):

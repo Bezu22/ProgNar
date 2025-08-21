@@ -1,14 +1,13 @@
 import tkinter as tk
 from tkinter import messagebox
-from config.cart_io import save_cart_to_file, save_cart_to_file_with_dialog, load_cart_from_file, load_cart_from_file_with_dialog, clear_temp_cart
-
 
 class BottomSection:
-    def __init__(self, parent, cart, cart_tree, client_name, root):
+    def __init__(self, parent, cart, cart_tree, client_name, root,main_app):
         self.cart = cart
         self.cart_tree = cart_tree
         self.client_name = client_name
         self.root = root
+        self.main_app = main_app
 
         self._build_ui(parent)
 
@@ -20,16 +19,16 @@ class BottomSection:
         left_button_frame = tk.Frame(bottom_frame)
         left_button_frame.pack(side=tk.LEFT, padx=10)
 
-        self.suma_ciecie_do_12 = tk.Label(left_button_frame, text="Ciecie do D12: 0 szt. 0.00 PLN", anchor='w')
+        self.suma_ciecie_do_12 = tk.Label(left_button_frame, text="Cięcie do D12: 0 szt. 0.00 PLN", anchor='w')
         self.suma_ciecie_do_12.pack(pady=1, fill='x')
 
-        self.suma_ciecie_ponad_12 = tk.Label(left_button_frame, text="Ciecie ponad D12: 0 szt. 0.00 PLN", anchor='w')
+        self.suma_ciecie_ponad_12 = tk.Label(left_button_frame, text="Cięcie ponad D12: 0 szt. 0.00 PLN", anchor='w')
         self.suma_ciecie_ponad_12.pack(pady=1, fill='x')
 
-        self.suma_zanizenia = tk.Label(left_button_frame, text="Zanizenia: 0 szt. 0.00 PLN", anchor='w')
+        self.suma_zanizenia = tk.Label(left_button_frame, text="Zaniżenia: 0 szt. 0.00 PLN", anchor='w')
         self.suma_zanizenia.pack(pady=1, fill='x')
 
-        self.suma_uslug_dodatkowych = tk.Label(left_button_frame, text="SUMA: 0.00 PLN", font="bold", anchor='w')
+        self.suma_uslug_dodatkowych = tk.Label(left_button_frame, text="Polerowanie: 0 szt 0.00 PLN", anchor='w')
         self.suma_uslug_dodatkowych.pack(pady=1, fill='x')
 
         tk.Button(left_button_frame, text="Wyczyść koszyk", command=self.clear_cart, width=20).pack(pady=5)
@@ -43,77 +42,128 @@ class BottomSection:
         right_button_frame = tk.Frame(bottom_frame)
         right_button_frame.pack(side=tk.RIGHT, padx=10)
 
-        tk.Button(right_button_frame, text="Usuń wybraną pozycję", command=self.delete_selected).pack(side=tk.LEFT, padx=5)
-        tk.Button(right_button_frame, text="Edytuj wybraną pozycję", command=self.edit_selected).pack(side=tk.LEFT, padx=5)
+        left_buttons_frame = tk.Frame(right_button_frame)
+        left_buttons_frame.pack(side = tk.LEFT,anchor = 'nw')
 
-        self.suma_uslug_label = tk.Label(right_button_frame, text="Suma usług: 0.00 PLN")
-        self.suma_uslug_label.pack(pady=5)
+        tk.Button(left_buttons_frame, text="Edytuj wybraną pozycję", command=self.edit_selected).pack(pady=6)
+        tk.Button(left_buttons_frame, text="Usuń wybraną pozycję", command=self.delete_selected).pack(pady = 6)
 
-        self.suma_powlekanie_label = tk.Label(right_button_frame, text="Suma powlekanie: 0.00 PLN")
-        self.suma_powlekanie_label.pack(pady=5)
+        right_labels_frame = tk.Frame(right_button_frame)
+        right_labels_frame.pack(side=tk.RIGHT)
 
-        self.suma_total_label = tk.Label(right_button_frame, text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
-        self.suma_total_label.pack(pady=5)
+        self.suma_szlif_label = tk.Label(right_labels_frame, anchor="e", justify="right",font='bold', text="Suma szlifowanie: 0.00 PLN")
+        self.suma_szlif_label.pack(pady=2,fill = 'x')
+        self.suma_uslug_label = tk.Label(right_labels_frame, anchor="e", justify="right", text="Suma usługi: 0.00 PLN")
+        self.suma_uslug_label.pack(pady=2,fill = 'x')
+        self.suma_powlekanie_label = tk.Label(right_labels_frame, anchor="e", justify="right", text="Suma powlekanie: 0.00 PLN")
+        self.suma_powlekanie_label.pack(pady=2,fill = 'x')
+
+        self.suma_total_label = tk.Label(right_labels_frame, anchor="e", justify="right", text="Suma: 0.00 PLN", font=("Arial", 12, "bold"))
+        self.suma_total_label.pack(pady=5,fill = 'x')
 
         tk.Button(
-            right_button_frame,
+            right_labels_frame,
             text="RAPORT",
             width=20,
             bg="red",
             fg="white",
-            font=("Arial", 12, "bold")
+            font=("Arial", 12, "bold"),
+            command=self.generate_pdf
         ).pack(pady=10)
 
-        self.cart.update_cart_display(self.cart_tree, self.suma_uslug_label, self.suma_powlekanie_label, self.suma_total_label)
+        self.cart.update_cart_display(self.cart_tree)
+        self.update_price_labels()
 
+    def update_price_labels(self):
+        """Aktualizuje etykiety cen na podstawie zawartości koszyka."""
 
-    # 🔧 Metody obsługujące zdarzenia
+        # zmienne cenowek
+        self.ciecie_do_12_count = 0
+        self.ciecie_do_12_total = 0.0
+        self.ciecie_ponad_12_count = 0
+        self.ciecie_ponad_12_total = 0.0
+        self.zanizenia_count = 0
+        self.zanizenia_total = 0.0
+        self.uslugi_total = 0.0
+        self.szlifowanie_total = 0.0
+        self.powlekanie_total = 0.0
+        self.total = 0.0
+
+        for item in self.cart.items:
+            srednica = float(item.get("Srednica"))
+            ilosc_sztuk = int(item.get("Ilosc sztuk"))
+            razem_ciecie = float(item.get("Razem ciecie"))
+            razem_zanizenia = float(item.get("Razem zanieznia", 0))
+            razem_szlifowanie = float(item.get("Razem szlifowanie"))
+
+            try:
+                test_powloka = float(item.get("Razem powloka"))
+                razem_powlekanie = float(item.get("Razem powloka"))
+            except ValueError:
+                razem_powlekanie = 0.0
+
+            ciecie_status = item.get("ciecie")
+            if ciecie_status == "+":
+                if srednica < 12.1:
+                    self.ciecie_do_12_total += razem_ciecie
+                    self.ciecie_do_12_count += ilosc_sztuk
+                else:
+                    self.ciecie_ponad_12_total += razem_ciecie
+                    self.ciecie_ponad_12_count += ilosc_sztuk
+
+            self.zanizenia_total += razem_zanizenia
+            self.szlifowanie_total += razem_szlifowanie
+            self.uslugi_total = self.ciecie_ponad_12_total + self.ciecie_do_12_total + self.zanizenia_total
+            self.powlekanie_total += razem_powlekanie
+
+            self.total = self.szlifowanie_total + self.uslugi_total + self.powlekanie_total
+
+            # Zapis CENOWY
+        zanizenia_count = int(self.zanizenia_total / 10)
+
+        self.suma_ciecie_do_12.config(text=f"Cięcie do D12: {self.ciecie_do_12_count} szt. {self.ciecie_do_12_total:.2f} PLN")
+        self.suma_ciecie_ponad_12.config(text=f"Cięcie ponad D12: {self.ciecie_ponad_12_count} szt. {self.ciecie_ponad_12_total:.2f} PLN")
+        self.suma_zanizenia.config(text=f"Zaniżenia: {zanizenia_count} szt. {self.zanizenia_total:.2f} PLN")
+        self.suma_szlif_label.config(text=f"Suma szlifowanie: {self.szlifowanie_total:.2f} PLN")
+        self.suma_uslug_label.config(text=f"Suma usługi: {self.uslugi_total:.2f} PLN")
+        self.suma_powlekanie_label.config(text=f"Suma powlekanie: {self.powlekanie_total:.2f} PLN")
+        self.suma_total_label.config(text=f"Suma: {self.total:.2f} PLN")
+
     def delete_selected(self):
-        if self.cart.delete_selected(self.cart_tree, main_app=self):
-            self.cart.update_cart_display(
-                self.cart_tree,
-                self.suma_uslug_label,
-                self.suma_powlekanie_label,
-                self.suma_total_label
-            )
+        """Usuwa wybraną pozycję i aktualizuje etykiety cen."""
+        if self.cart.delete_selected(self.cart_tree, self.client_name):
+            self.update_price_labels()  # Aktualizuj etykiety cen po usunięciu
+        # Widok koszyka jest już aktualizowany w CartMain.delete_selected
 
     def edit_selected(self):
-        if self.cart.edit_selected(self.cart_tree, self.root, self):
-            self.cart.update_cart_display(
-                self.cart_tree,
-                self.suma_uslug_label,
-                self.suma_powlekanie_label,
-                self.suma_total_label
-            )
+        self.cart.edit_selected(self.cart_tree,
+                                   self.root,self.cart,
+                                   self.client_name,self.main_app.handle_save)
 
     def clear_cart(self):
+        """Czyści koszyk i aktualizuje etykiety cen."""
         if len(self.cart.items) > 0:
             if not messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz wyczyścić koszyk?"):
                 return
-        self.cart.clear_cart(main_app=self)
-        clear_temp_cart()
+        self.cart.clear_cart(self.client_name)
         self.client_name.set("- -")
-        self.cart.update_cart_display(
-            self.cart_tree,
-            self.suma_uslug_label,
-            self.suma_powlekanie_label,
-            self.suma_total_label
-        )
+        self.cart.update_cart_display(self.cart_tree)
+        self.update_price_labels()
 
     def save_cart(self):
-        save_cart_to_file_with_dialog(self.cart, self.client_name, self.root)
+        """Zapisuje koszyk do pliku."""
+        self.cart.save_to_file_with_dialog(self.client_name, self.root)
 
     def load_cart(self):
+        """Wczytuje koszyk z pliku po potwierdzeniu."""
         if len(self.cart.items) > 0:
             if not messagebox.askyesno("Potwierdzenie", "Wczytanie koszyka spowoduje utratę aktualnego. Kontynuować?"):
                 return
-        if load_cart_from_file_with_dialog(self.cart, self.client_name, self.root):
-            self.cart.update_cart_display(
-                self.cart_tree,
-                self.suma_uslug_label,
-                self.suma_powlekanie_label,
-                self.suma_total_label
-            )
-            save_cart_to_file(self.cart, self.client_name)
+        if self.cart.load_from_file_with_dialog(self.client_name, self.root, self.cart_tree):
+            self.update_price_labels()
+        self.main_app.cart.load_from_file(self.main_app.client_name)
+        self.main_app.cart.update_cart_display(self.main_app.cart_tree)
 
-
+    def generate_pdf(self):
+        """Generuje raport PDF."""
+        self.root.generate_report()
