@@ -48,6 +48,11 @@ class FrezyUI:
         self.bonus_price_var = tk.DoubleVar(value=0.0)
         self.total_price_var = tk.DoubleVar(value=0.0)
 
+        self.grinding_discount_value = tk.IntVar(value=0)
+        self.coating_discount_value = tk.IntVar(value=0)
+        self.cutting_discount_value = tk.IntVar(value=0)
+        self.lowering_discount_value = tk.IntVar(value=0)
+
         # Sekcje UI
         self.create_type_section()
         self.create_diameter_section()
@@ -524,6 +529,11 @@ class FrezyUI:
             "Razem zanieznia": f"{self.current_lowering_price.get():.2f}",
             "Razem uslugi": f"{self.bonus_price_var.get():.2f}",
             "Razem": f"{self.total_price_var.get():.2f}",
+            "Rabat ostrzenie": f"{self.grinding_discount_value.get()}",
+            "Rabat powloka": f"{self.coating_discount_value.get()}",
+            "Rabat ciecie": f"{self.cutting_discount_value.get()}",
+            "Rabat zanizenie": f"{self.lowering_discount_value.get()}",
+
         }
 
         if self.edit_index is not None:
@@ -578,6 +588,7 @@ class FrezyUI:
         self.bonus_price_var.set(float(item["Razem uslugi"]))
         self.total_price_var.set(float(item["Razem"]))
 
+
         try:
             self.current_coating_price_per_piece.set(float(item["Cena powlekania"]))
             self.current_coating_price.set(float(item["Razem powloka"]))
@@ -585,6 +596,10 @@ class FrezyUI:
             print("brak cen dla powlekania - ustawiam na 0.0")
             self.current_coating_price_per_piece.set(0.00)
             self.current_coating_price.set(0.00)
+        self.grinding_discount_value.set(float(item["Rabat ostrzenie"]))
+        self.coating_discount_value.set(float(item["Rabat powloka"]))
+        self.cutting_discount_value.set(int(item["Rabat ciecie"]))
+        self.lowering_discount_value.set(int(item["Rabat zanizenie"]))
 
         '''
         print("Wczytane ceny")

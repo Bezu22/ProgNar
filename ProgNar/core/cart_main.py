@@ -34,7 +34,11 @@ class CartMain:
             "Cena ciecia": prices["Cena ciecia"],
             "Razem ciecie": prices["Razem ciecie"],
             "Razem uslugi": prices["Razem uslugi"],
-            "Razem": prices["Razem"]
+            "Razem": prices["Razem"],
+            "Rabat ostrzenie": prices["Rabat ostrzenie"],
+            "Rabat powloka": prices["Rabat powloka"],
+            "Rabat ciecie": prices["Rabat ciecie"],
+            "Rabat zanizenie": prices["Rabat zanizenie"]
         }
         if "Stopnie" in params:
             item["Stopnie"] = params["Stopnie"]
@@ -43,6 +47,8 @@ class CartMain:
             item["Cena zanieznia"] = prices["Cena zanieznia"]
         if "Razem zanieznia" in prices:
             item["Razem zanieznia"] = prices["Razem zanieznia"]
+
+
 
         self.items.append(item)
         self.save_to_file(client_name)

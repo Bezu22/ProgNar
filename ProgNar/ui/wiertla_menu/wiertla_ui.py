@@ -46,6 +46,12 @@ class WiertlaUI:
         self.bonus_price_var = tk.DoubleVar(value=0.0)
         self.total_price_var = tk.DoubleVar(value=0.0)
 
+        self.grinding_discount_value = tk.IntVar(value=0)
+        self.coating_discount_value = tk.IntVar(value=0)
+        self.cutting_discount_value = tk.IntVar(value=0)
+        self.lowering_discount_value = tk.IntVar(value=0)
+
+
         # Sekcje UI
         self.create_type_section()
         self.create_diameter_section()
@@ -435,6 +441,10 @@ class WiertlaUI:
             "Razem ciecie": f"{self.current_cutting_price.get():.2f}",
             "Razem uslugi": f"{self.bonus_price_var.get():.2f}",
             "Razem": f"{self.total_price_var.get():.2f}",
+            "Rabat ostrzenie": f"{self.grinding_discount_value.get():.2f}",
+            "Rabat powloka": f"{self.coating_discount_value.get()}",
+            "Rabat ciecie": f"{self.cutting_discount_value.get()}",
+            "Rabat zanizenie": f"{self.lowering_discount_value.get()}",
         }
 
         if self.edit_index is not None:
@@ -570,6 +580,10 @@ class WiertlaUI:
         except ValueError:
             self.current_coating_price_per_piece.set(0.00)
             self.current_coating_price.set(0.00)
+        self.grinding_discount_value.set(int(item["Rabat ostrzenie"]))
+        self.coating_discount_value.set(int(item["Rabat powloka"]))
+        self.cutting_discount_value.set(int(item["Rabat ciecie"]))
+        self.lowering_discount_value.set(int(item["Rabat zanizenie"]))
 
         self.add_button.config(text= "Zapisz zmiany")
         self.update_price_labels()
