@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import TclError
 from tkinter import messagebox
 
 class NotesMenu:
@@ -87,27 +87,6 @@ class NotesMenu:
             self.remarks_text.delete("1.0", tk.END)
             self.remarks_text.config(state='disabled', bg="#d3d3d3",height=1)
 
-    def save_remarks(self):
-        """Zapisuje uwagi do pozycji w koszyku i aktualizuje widok."""
-        if self.remarks_active_var.get():
-            remarks = self.remarks_text.get("1.0", tk.END).strip()
-            if not remarks:
-                messagebox.showwarning("Błąd", "Pole uwag nie może być puste, jeśli jest aktywne.")
-                return
-            self.cart.items[self.item_index]['Uwagi'] = remarks
-        else:
-            self.cart.items[self.item_index]['Uwagi'] = '-'
-
-        # Zapis do pliku tymczasowego
-        try:
-            self.cart.save_to_file(self.main_app.client_name)
-        except Exception as e:
-            messagebox.showerror("Błąd", f"Nie udało się zapisać uwag: {str(e)}")
-
-        # Aktualizacja widoku koszyka
-        self.cart.update_cart_display(self.main_app.cart_tree)
-
-        self.window.destroy()
     def prices_display(self):
         self.prices_grid = tk.Frame(self.main_frame)
         self.prices_grid.pack(pady=5,anchor = 'w')
@@ -116,7 +95,7 @@ class NotesMenu:
                                        font=("Arial", 12))
         self.current_grinding_price_label.grid(row=0, column=0, sticky='w', padx=40)
         self.current_coating_price_label = tk.Label(self.prices_grid,
-                                      text=f"Cena powlekanie szt : {self.default_coating_price.get():.2f} zł",
+                                      text=f"Cena powlekanie szt: {self.default_coating_price.get():.2f} zł",
                                       font=("Arial", 12))
         self.current_coating_price_label.grid(row=0, column=1, sticky='w')
 
@@ -180,30 +159,39 @@ class NotesMenu:
 
 
         #rabat szlif
-        tk.Checkbutton(self.combogrid, text="Rabat ostrzenie %", variable=self.grinding_discount_check,
-                                                 command=self.toggle_discount_entry).grid(
+        self.grinding_discount_checkbutton = tk.Checkbutton(self.combogrid, text="Rabat ostrzenie %", variable=self.grinding_discount_check,
+                                                 command=self.toggle_discount_entry)
+        self.grinding_discount_checkbutton.grid(
             row=0, column=0, sticky='w', padx=2, pady=2)
-        self.grinding_disc_entry = tk.Entry(self.combogrid, textvariable=self.grinding_discount, width=4, state='disabled')
-        self.grinding_disc_entry.grid(row=0, column=1, sticky='w', padx=2, pady=2)
+        self.grinding_discount_entry = tk.Entry(self.combogrid, textvariable=self.grinding_discount, width=4, state='disabled')
+        self.grinding_discount_entry.grid(row=0, column=1, sticky='w', padx=2, pady=2)
+        self.grinding_discount_entry.bind("<KeyRelease>", self.on_entry_change)
         #rabat powloka
-        tk.Checkbutton(self.combogrid, text="Rabat powłoka %", variable=self.coating_discount_check,
-                                                  command=self.toggle_discount_entry).grid(
+        self.coating_discount_checkbutton = tk.Checkbutton(self.combogrid, text="Rabat powłoka %", variable=self.coating_discount_check,
+                                                  command=self.toggle_discount_entry)
+        self.coating_discount_checkbutton.grid(
             row=1, column=0, sticky='w', padx=2, pady=2)
         self.coating_discount_entry = tk.Entry(self.combogrid, textvariable=self.coating_discount, width=4, state='disabled')
         self.coating_discount_entry.grid(row=1, column=1, sticky='w', padx=2, pady=2)
+        self.coating_discount_entry.bind("<KeyRelease>", self.on_entry_change)
         # rabat ciecie
-        tk.Checkbutton(self.combogrid, text="Rabat ciecie %", variable=self.cutting_discount_check,
-                                               command=self.toggle_discount_entry).grid(
+        self.cutting_discount_checkbutton = tk.Checkbutton(self.combogrid, text="Rabat ciecie %", variable=self.cutting_discount_check,
+                                               command=self.toggle_discount_entry)
+        self.cutting_discount_checkbutton.grid(
             row=2, column=0, sticky='w', padx=2, pady=2)
         self.cutting_discount_entry = tk.Entry(self.combogrid, textvariable=self.cutting_discount, width=4, state='disabled')
         self.cutting_discount_entry.grid(row=2, column=1, sticky='w', padx=2, pady=2)
+        self.cutting_discount_entry.bind("<KeyRelease>", self.on_entry_change)
         # rabat zanizenie
-        tk.Checkbutton(self.combogrid, text="Rabat zanizenie %", variable=self.lowering_discount_check,
-                       command=self.toggle_discount_entry).grid(
+        self.lowering_discount_checkbutton = tk.Checkbutton(self.combogrid, text="Rabat zanizenie %", variable=self.lowering_discount_check,
+                       command=self.toggle_discount_entry)
+        self.lowering_discount_checkbutton.grid(
             row=3, column=0, sticky='w', padx=2, pady=2)
         self.lowering_discount_entry = tk.Entry(self.combogrid, textvariable=self.lowering_discount, width=4,
                                                state='disabled')
         self.lowering_discount_entry.grid(row=3, column=1, sticky='w', padx=2, pady=2)
+        self.lowering_discount_entry.bind("<KeyRelease>", self.on_entry_change)
+
 
 
     def leave_section(self):
@@ -212,7 +200,7 @@ class NotesMenu:
         tk.Button(
             self.quit_buttons_frame,
             text="Zapisz",
-            command=self.save_remarks,
+            command=self.save_changes,
             font=("Arial", 12),
             bg="#4CAF50",
             fg="white"
@@ -231,11 +219,11 @@ class NotesMenu:
     def toggle_discount_entry(self):
         #szlif
         if self.grinding_discount_check.get():
-            self.grinding_disc_entry.config(state = 'normal')
-            self.grinding_disc_entry.focus_set()
-            self.grinding_disc_entry.selection_range(0, 'end')
+            self.grinding_discount_entry.config(state = 'normal')
+            self.grinding_discount_entry.focus_set()
+            self.grinding_discount_entry.selection_range(0, 'end')
         else:
-            self.grinding_disc_entry.config(state = 'disabled')
+            self.grinding_discount_entry.config(state = 'disabled')
             self.grinding_discount.set(0)
         #powloka
         if self.coating_discount_check.get():
@@ -261,12 +249,16 @@ class NotesMenu:
         else:
             self.lowering_discount_entry.config(state = 'disabled')
             self.lowering_discount.set(0)
+        self.on_entry_change()
+
 
 
 
     def toggle_discount_check(self):
         if self.discount_check_var.get():
             self.discount_options_frame.pack(anchor = "nw", padx = 5)
+            #sprawdz czy jest co rabatowac
+            self.disable_discouts_if_zero()
         else:
             self.grinding_discount_check.set(False)
             self.grinding_discount.set(0)
@@ -276,7 +268,7 @@ class NotesMenu:
             self.cutting_discount.set(0)
             self.lowering_discount_check.set(False)
             self.lowering_discount.set(0)
-
+            self.on_entry_change()
             self.discount_options_frame.pack_forget()
 
     def set_values(self):
@@ -313,17 +305,123 @@ class NotesMenu:
             self.toggle_discount_entry()
 
 
-    def refresh(self):
-        #jesli cena jest zmieniona zmien kolor tekstu
+    def on_entry_change(self,event=None):
+        # Lista pól do przeliczenia
+        discount_sets = [
+            (self.grinding_discount, self.default_grinding_price, self.current_grinding_price_per_piece, self.current_grinding_price_label, "Cena szlif szt"),
+            (self.coating_discount, self.default_coating_price, self.current_coating_price_per_piece, self.current_coating_price_label, "Cena powlekanie szt"),
+            (self.cutting_discount, self.default_cutting_price, self.current_cutting_price_per_piece, self.current_cutting_price_label, "Cena cięcie szt"),
+            (self.lowering_discount, self.default_lowering_price, self.current_lowering_price_per_piece, self.current_lowering_price_label, "Cena szyjki szt")
+        ]
+
+        for discount_var, default_price_var, current_price,label_widget, label_text in discount_sets:
+            try:
+                value = int(discount_var.get())
+            except TclError:
+                discount_var.set(0)
+                label_widget.config(text=f"{label_text}: {default_price_var.get():.2f} zł", fg='black')
+                continue
+
+            if value <= 0 or value > 100:
+                label_widget.config(text=f"{label_text}: {default_price_var.get():.2f} zł", fg='black')
+            else:
+                discounted_price = float(default_price_var.get()) * (1 - (value / 100))
+                current_price.set(discounted_price)
+                label_widget.config(text=f"{label_text}: {discounted_price:.2f} zł", fg='green')
+
+    def on_discount_change(self, event, discount_var, default_price_var, label_widget):
+        try:
+            value = int(discount_var.get())
+        except TclError:
+            print("Niepoprawna wartość")
+            discount_var.set(0)
+            label_widget.config(text=f"Cena szt: {default_price_var.get():.2f} zł", fg='black')
+            return
+
+        if value <= 0 or value > 100:
+            label_widget.config(text=f"Cena szt: {default_price_var.get():.2f} zł", fg='black')
+        else:
+            discounted_price = float(default_price_var.get()) * (1 - (value / 100))
+            label_widget.config(text=f"Cena szt: {discounted_price:.2f} zł", fg='green')
+
+
+
+    def disable_discouts_if_zero(self):
+        discount_sets = [
+            (self.grinding_discount, self.default_grinding_price, self.grinding_discount_checkbutton,
+             self.grinding_discount_entry),
+            (self.coating_discount, self.default_coating_price, self.coating_discount_checkbutton,
+             self.coating_discount_entry),
+            (self.cutting_discount, self.default_cutting_price, self.cutting_discount_checkbutton,
+             self.cutting_discount_entry),
+            (self.lowering_discount, self.default_lowering_price, self.lowering_discount_checkbutton,
+             self.lowering_discount_entry)
+        ]
+        for discount_var, default_price_var, checkbox_widget, entry_widget in discount_sets:
+            if float(default_price_var.get()) == 0.00:
+                checkbox_widget.config(state='disabled')
+                entry_widget.config(state='disabled')
+                discount_var.set(0)  # opcjonalnie: reset zniżki
+
+    def save_changes(self):
+        """Zapisuje uwagi do pozycji w koszyku i aktualizuje widok."""
+        if self.remarks_active_var.get():
+            remarks = self.remarks_text.get("1.0", tk.END).strip()
+            if not remarks:
+                messagebox.showwarning("Błąd", "Pole uwag nie może być puste, jeśli jest aktywne.")
+                return
+            self.cart.items[self.item_index]['Uwagi'] = remarks
+        else:
+            self.cart.items[self.item_index]['Uwagi'] = '-'
+
+        quantity = self.cart.items[self.item_index]["Ilosc sztuk"]
+        data_sets = [
+            (self.grinding_discount,self.current_grinding_price_per_piece, "Rabat ostrzenie","Cena szlifowania","Razem szlifowanie"),
+            (self.coating_discount, self.current_coating_price_per_piece,"Rabat powloka","Cena powlekania","Razem powloka"),
+            (self.cutting_discount, self.current_cutting_price_per_piece, "Rabat ciecie","Cena ciecia","Razem ciecie"),
+            (self.lowering_discount, self.current_lowering_price_per_piece, "Rabat zanizenie", "Cena zanieznia","Razem zanieznia")
+        ]
+
+        for discount_amount,price_per_piece,discount_label,price_label,sum_price_label in data_sets:
+            if float(price_per_piece.get()) != 0.00:
+                self.cart.items[self.item_index][discount_label] = f"{discount_amount.get()}"
+                self.cart.items[self.item_index][price_label] = f"{price_per_piece.get():.2f}"
+                sum = float(price_per_piece.get()) * quantity
+                self.cart.items[self.item_index][sum_price_label] = f"{sum:.2f}"
+
+
         '''
-        self.current_grinding_price_label
-        self.current_coating_price_label
-        self.current_cutting_price_label
-        self.current_lowering_price_label'''
+         
+            "Razem szlifowanie": "525.00",
+            "Cena powlekania": "-",
+            "Razem powloka": "-",
+            "Cena ciecia": "12.00",
+            "Razem ciecie": "168.00",
+            "Cena zanieznia": "0.00",
+            "Razem zanieznia": "0.00",
+            "Razem uslugi": "168.00",
+            "Razem": "693.00",
+        
+        #wpisujemy rabaty
+        self.cart.items[self.item_index]["Rabat ostrzenie"] = f"{self.grinding_discount.get()}"
+        self.cart.items[self.item_index]["Rabat powloka"] = f"{self.coating_discount.get()}"
+        self.cart.items[self.item_index]["Rabat ciecie"] = f"{self.cutting_discount.get()}"
+        self.cart.items[self.item_index]["Rabat zanizenie"] = f"{self.lowering_discount.get()}"
+        #wpisujemy ceny / szt
+        
+        self.cart.items[self.item_index]["Cena szlifowania"] = f"{self.current_grinding_price_per_piece.get():.2f}"
+        self.cart.items[self.item_index]["Cena powlekania"] = f"{self.current_grinding_price_per_piece.get():.2f}"
+        self.cart.items[self.item_index]["Cena szlifowania"] = f"{self.current_grinding_price_per_piece.get():.2f}"
+        self.cart.items[self.item_index]["Cena szlifowania"] = f"{self.current_grinding_price_per_piece.get():.2f}"
+        '''
+        # Zapis do pliku tymczasowego
+        try:
+            self.cart.save_to_file(self.main_app.client_name)
+        except Exception as e:
+            messagebox.showerror("Błąd", f"Nie udało się zapisać uwag: {str(e)}")
 
-
-
-        pass
-
+        # Aktualizacja widoku koszyka
+        self.cart.update_cart_display(self.main_app.cart_tree)
+        self.window.destroy()
     def empty(self):
         pass
