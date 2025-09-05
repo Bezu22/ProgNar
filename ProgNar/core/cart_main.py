@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox, filedialog
 from config.utils import resource_path
 from ui.frezy_menu.frezy_ui import FrezyUI
 from ui.wiertla_menu.wiertla_ui import WiertlaUI
+from ui.main_menu.cart_display import CartDisplay
 #from tools_menu.wiertla_menu import WiertlaMenu
 #from tools_menu.pozostale_menu import PozostaleMenu
 #from tools_menu.uslugi_menu import UslugiMenu
@@ -14,6 +15,8 @@ class CartMain:
         self.items = []
         self.filename = resource_path("data/temp_cart.json")
         self.load_from_file()
+
+
 
     def add_item(self, params, prices, client_name):
         """Dodaje nowy element do koszyka i zapisuje do pliku."""
@@ -25,6 +28,7 @@ class CartMain:
             "Ilosc sztuk": params["Ilosc sztuk"],
             "ciecie": params["ciecie"],
             "Uwagi": params["Uwagi"],
+            "Uwagi status": params["Uwagi status"],
             "Powloka": params["Powloka"],
             "Długość całkowita": params["Długość całkowita"],
             "Cena szlifowania": prices["Cena szlifowania"],
@@ -79,6 +83,7 @@ class CartMain:
         except Exception as e:
             messagebox.showerror("Błąd", f"Nie udało się zapisać koszyka: {str(e)}")
             return False
+
 
     def load_from_file(self, client_name=None):
         """Wczytuje koszyk i nazwę klienta z pliku JSON."""
@@ -137,8 +142,8 @@ class CartMain:
         """Aktualizuje wyświetlanie koszyka w tabeli."""
         cart_tree.delete(*cart_tree.get_children())
         for idx, item in enumerate(self.items):
-            uwagi = "✓" if item["Uwagi"] != "-" else "−"
-            remarks_tag = "remarks_filled" if uwagi == "✓" else "remarks_empty"
+            #uwagi = "✓" if item["Uwagi"] != "-" else "−"
+            #remarks_tag = "remarks_filled" if uwagi == "✓" else "remarks_empty"
             cart_tree.insert("", tk.END, iid=str(idx), values=(
                 idx + 1,
                 item.get("Nazwa", "-"),
@@ -153,8 +158,8 @@ class CartMain:
                 item.get("Długość całkowita", "-"),
                 item.get("Cena powlekania", "-"),
                 item.get("Razem powloka", "-"),
-                uwagi
-            ), tags=[remarks_tag if i == 13 else "" for i in range(14)])
+                item.get("Uwagi status")
+            ))
 
     def delete_selected(self, cart_tree, client_name):
         """Usuwa wybrany element z koszyka."""
