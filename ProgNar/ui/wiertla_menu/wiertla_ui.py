@@ -35,6 +35,7 @@ class WiertlaUI:
         self.coating_var = tk.StringVar(value="BRAK")
         self.length_var = tk.IntVar(value=100)
         self.remarks_var = tk.StringVar(value="-")
+        self.remarks_value = tk.StringVar(value=" ")
         # Zmienne cen !
         self.current_cutting_price_per_piece = tk.DoubleVar(value=0.00)
         self.current_lowering_price_per_piece = tk.DoubleVar(value=0.00)
@@ -45,6 +46,12 @@ class WiertlaUI:
         self.current_grinding_price = tk.DoubleVar(value=0.00)
         self.bonus_price_var = tk.DoubleVar(value=0.0)
         self.total_price_var = tk.DoubleVar(value=0.0)
+
+        self.grinding_discount_value = tk.IntVar(value=0)
+        self.coating_discount_value = tk.IntVar(value=0)
+        self.cutting_discount_value = tk.IntVar(value=0)
+        self.lowering_discount_value = tk.IntVar(value=0)
+
 
         # Sekcje UI
         self.create_type_section()
@@ -328,19 +335,19 @@ class WiertlaUI:
 
     def on_step_entry_change(self, event=None):
             """Walidacja inputu."""
-            z_input = self.step_var.get().replace(",", ".")
-            z_default = "2"
+            step_input = self.step_var.get().replace(",", ".")
+            step_default = "2"
             try:
-                if not z_input.strip():
+                if not step_input.strip():
                     raise ValueError
             except ValueError:
-                self.step_var.set(z_default)
+                self.step_var.set(step_default)
                 return
-            if not validate_positive_int(z_input):
-                self.step_var.set(z_default)
+            if not validate_positive_int(step_input):
+                self.step_var.set(step_default)
                 return
-            if int(z_input) < 2:
-                self.step_var.set(z_default)
+            if int(step_input) < 2:
+                self.step_var.set(step_default)
                 return
             self.update_price_labels()
 
@@ -418,11 +425,12 @@ class WiertlaUI:
             "Srednica": self.diameter_var.get(),
             "fiChwyt": self.chwyt_var.get(),
             "Ilosc ostrzy": self.z_var.get(),
-            "Ilosc sztuk": int(self.quantity_var.get()),
+            "Ilosc sztuk": self.quantity_var.get(),
             "ciecie": "+" if self.ciecie_var.get() else "-",
             "Powloka": self.coating_var.get(),
-            "Długość całkowita": str(self.length_var.get()),
-            "Uwagi": self.remarks_var.get(),
+            "Dlugosc calkowita": str(self.length_var.get()),
+            "Uwagi status": self.remarks_var.get(),
+            "Uwagi": self.remarks_value.get(),
             "Stopnie": self.step_var.get()
         }
 
@@ -433,8 +441,14 @@ class WiertlaUI:
             "Razem powloka": f"{self.current_coating_price.get():.2f}" if self.coating_var.get() != "BRAK" else "-",
             "Cena ciecia": f"{self.current_cutting_price_per_piece.get():.2f}",
             "Razem ciecie": f"{self.current_cutting_price.get():.2f}",
+            "Cena zanieznia": "0.00",
+            "Razem zanieznia": "0.00",
             "Razem uslugi": f"{self.bonus_price_var.get():.2f}",
             "Razem": f"{self.total_price_var.get():.2f}",
+            "Rabat ostrzenie": f"{self.grinding_discount_value.get()}",
+            "Rabat powloka": f"{self.coating_discount_value.get()}",
+            "Rabat ciecie": f"{self.cutting_discount_value.get()}",
+            "Rabat zanizenie": f"{self.lowering_discount_value.get()}",
         }
 
         if self.edit_index is not None:
@@ -541,7 +555,7 @@ class WiertlaUI:
         self.quantity_var.set(str(item["Ilosc sztuk"]))
         self.ciecie_var.set(item["ciecie"] == "+")
         self.coating_var.set(item["Powloka"])
-        self.length_var.set(item["Długość całkowita"])
+        self.length_var.set(item["Dlugosc calkowita"])
         if "(s:" in item["Nazwa"]:
             self.ik_var.set(True)
             self.ik_value_var.set(item["Nazwa"].split("(IK:")[1].rstrip(")"))
@@ -553,7 +567,8 @@ class WiertlaUI:
 
 
         self.step_var.set(item.get("Stopnie", "2"))
-        self.remarks_var.set(item["Uwagi"])
+        self.remarks_var.set(item["Uwagi status"])
+        self.remarks_value.set(item["Uwagi"])
 
         # Wypełnianie zmiennych cenowych
         self.current_grinding_price_per_piece.set(float(item["Cena szlifowania"]))
@@ -570,6 +585,10 @@ class WiertlaUI:
         except ValueError:
             self.current_coating_price_per_piece.set(0.00)
             self.current_coating_price.set(0.00)
+        self.grinding_discount_value.set(int(item["Rabat ostrzenie"]))
+        self.coating_discount_value.set(int(item["Rabat powloka"]))
+        self.cutting_discount_value.set(int(item["Rabat ciecie"]))
+        self.lowering_discount_value.set(int(item["Rabat zanizenie"]))
 
         self.add_button.config(text= "Zapisz zmiany")
         self.update_price_labels()

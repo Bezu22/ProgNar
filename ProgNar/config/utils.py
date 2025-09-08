@@ -84,7 +84,7 @@ def resource_path(relative_path):
 
 def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var):
     #konwersja ze StripVar
-    tool_type = tool_type_var.get().strip()
+    tool_type = tool_type_var.get().strip().split(" (")[0]
     #Brak cennika na dlugie wiertla
     #tymaczasowo przyjmujemy ceny normalnych
     if tool_type == "Wiertlo długie":
@@ -92,7 +92,7 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
     try:
         num_blades = int(num_blades_var.get().strip())
         diameter = float(diameter_var.get().replace(",", ".").strip())
-        quantity = int(quantity_var.get().strip())
+        quantity = int(quantity_var.get())
     except ValueError:
         print("Błąd konwersji danych wejściowych")
         return None
@@ -236,3 +236,5 @@ def get_coating_price(diameter_var, coating_var, length_var, full_data):
     except Exception as e:
         print("Błąd:", e)
         return 0.0
+
+

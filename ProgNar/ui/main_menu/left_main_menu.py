@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 from config.utils import resource_path
 from ui.frezy_menu.frezy_ui import FrezyUI
 from ui.wiertla_menu.wiertla_ui import WiertlaUI
-from tools_menu.pozostale_menu import PozostaleMenu
+from ui.pozostale_menu.pozostale_ui import PozostaleUI
 from tools_menu.uslugi_menu import UslugiMenu
 from config.cenniki import CennikiMenu
 
@@ -63,20 +63,7 @@ class LeftMenu:
             ).pack()
         except Exception as e:
             print(f"Błąd wczytywania obrazów: {e}")
-            frezy_frame = tk.Frame(button_row_frame, bg="lightgrey")
-            frezy_frame.pack(side=tk.LEFT, padx=10)
-            tk.Label(frezy_frame, text="Frezy", bg="lightgrey", font=("Arial", 10)).pack()
-            tk.Button(frezy_frame, text="Frezy", font=("Arial", 14), command=self.show_frezy_menu).pack()
 
-            wiertla_frame = tk.Frame(button_row_frame, bg="lightgrey")
-            wiertla_frame.pack(side=tk.LEFT, padx=10)
-            tk.Label(wiertla_frame, text="Wiertła", bg="lightgrey", font=("Arial", 10)).pack()
-            tk.Button(wiertla_frame, text="Wiertła", font=("Arial", 14), command=self.show_wiertla_menu).pack()
-
-            pozostale_frame = tk.Frame(button_row_frame, bg="lightgrey")
-            pozostale_frame.pack(side=tk.LEFT, padx=10)
-            tk.Label(pozostale_frame, text="Pozostałe", bg="lightgrey", font=("Arial", 10)).pack()
-            tk.Button(pozostale_frame, text="Pozostałe", font=("Arial", 14), command=self.show_pozostale_menu, width=15).pack()
 
         pozostale_frame = tk.Frame(self.left_frame, bg="lightgrey")
         pozostale_frame.pack(pady=5)
@@ -91,7 +78,7 @@ class LeftMenu:
             ).pack()
         except AttributeError:
             tk.Button(pozostale_frame, text="Pozostałe", font=("Arial", 14), command=self.show_pozostale_menu, width=15).pack()
-
+        '''
         uslugi_frame = tk.Frame(self.left_frame, bg="lightgrey")
         uslugi_frame.pack(pady=5)
         tk.Label(uslugi_frame, text="Usługi", bg="lightgrey", font=("Arial", 10)).pack()
@@ -105,8 +92,9 @@ class LeftMenu:
             ).pack()
         except AttributeError:
             tk.Button(uslugi_frame, text="Usługi", font=("Arial", 14), command=self.show_uslugi_menu, width=15).pack()
-
+        '''
         tk.Button(self.left_frame, text="Wyjście", font=("Arial", 14), command=self.root.quit).pack(pady=20)
+
 
         logo_frame = tk.Frame(self.left_frame, bg="lightgrey")
         logo_frame.pack(pady=5)
@@ -133,7 +121,7 @@ class LeftMenu:
 
     def show_pozostale_menu(self):
         """Otwiera menu pozostałych narzędzi."""
-        PozostaleMenu(self.root, self.cart, main_app=self.main_app)
+        PozostaleUI(self.root, self.cart, self.client_name,self.main_app.handle_save)
 
     def show_uslugi_menu(self):
         """Otwiera menu usług."""

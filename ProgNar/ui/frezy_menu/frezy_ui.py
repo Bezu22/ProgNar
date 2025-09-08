@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 import math ,json
-#from statistics import quantiles
 from tkinter import messagebox
 from config.utils import add_separator, validate_positive_int, resource_path, get_grinding_price,get_cutting_price,get_coating_price
 from config.ui_utils import update_button_styles
@@ -35,6 +34,7 @@ class FrezyUI:
         self.coating_var = tk.StringVar(value="BRAK")
         self.length_var = tk.IntVar(value=100)
         self.remarks_var = tk.StringVar(value="-")
+        self.remarks_value = tk.StringVar(value = " ")
 
         # Zmienne cen !
         self.current_cutting_price_per_piece = tk.DoubleVar(value = 0.00)
@@ -47,6 +47,11 @@ class FrezyUI:
         self.current_grinding_price = tk.DoubleVar(value = 0.00)
         self.bonus_price_var = tk.DoubleVar(value=0.0)
         self.total_price_var = tk.DoubleVar(value=0.0)
+
+        self.grinding_discount_value = tk.IntVar(value=0)
+        self.coating_discount_value = tk.IntVar(value=0)
+        self.cutting_discount_value = tk.IntVar(value=0)
+        self.lowering_discount_value = tk.IntVar(value=0)
 
         # Sekcje UI
         self.create_type_section()
@@ -387,8 +392,9 @@ class FrezyUI:
             )
 
             if self.grinding_price is not None:
-                self.current_grinding_price_per_piece.set(self.grinding_price)
-                self.current_grinding_price.set(self.grinding_price * float(self.quantity_var.get()))
+                self.current_grinding_price_per_piece.set(self.grinding_price * (1 - (int(self.grinding_discount_value.get())/100) ) )
+                print(self.current_grinding_price_per_piece.get())
+                self.current_grinding_price.set(self.grinding_price * int(self.quantity_var.get()))
                 self.grinding_price_label.config(
                     text=f"Cena ostrzenia: {self.current_grinding_price_per_piece.get():.2f} zł / {self.current_grinding_price.get():.2f} zł", font=("Arial", 10)
                 )
@@ -506,11 +512,12 @@ class FrezyUI:
             "Srednica": self.diameter_var.get(),
             "fiChwyt": self.chwyt_var.get(),
             "Ilosc ostrzy": self.z_var.get(),
-            "Ilosc sztuk": int(self.quantity_var.get()),
+            "Ilosc sztuk": self.quantity_var.get(),
             "ciecie": "+" if self.ciecie_var.get() else "-",
             "Powloka": self.coating_var.get(),
-            "Długość całkowita": str(self.length_var.get()),
-            "Uwagi": self.remarks_var.get()
+            "Dlugosc calkowita": str(self.length_var.get()),
+            "Uwagi status": self.remarks_var.get(),
+            "Uwagi": self.remarks_value.get()
         }
 
         prices = {
@@ -524,6 +531,11 @@ class FrezyUI:
             "Razem zanieznia": f"{self.current_lowering_price.get():.2f}",
             "Razem uslugi": f"{self.bonus_price_var.get():.2f}",
             "Razem": f"{self.total_price_var.get():.2f}",
+            "Rabat ostrzenie": f"{self.grinding_discount_value.get()}",
+            "Rabat powloka": f"{self.coating_discount_value.get()}",
+            "Rabat ciecie": f"{self.cutting_discount_value.get()}",
+            "Rabat zanizenie": f"{self.lowering_discount_value.get()}",
+
         }
 
         if self.edit_index is not None:
@@ -556,7 +568,7 @@ class FrezyUI:
         self.quantity_var.set(str(item["Ilosc sztuk"]))
         self.ciecie_var.set(item["ciecie"] == "+")
         self.coating_var.set(item["Powloka"])
-        self.length_var.set(item["Długość całkowita"])
+        self.length_var.set(item["Dlugosc calkowita"])
         if "(s:" in item["Nazwa"]:
             self.s_var.set(True)
             self.s_value_var.set(item["Nazwa"].split("(s:")[1].rstrip(")"))
@@ -566,7 +578,9 @@ class FrezyUI:
             self.s_value_var.set(value = " ")
             self.s_entry.config(state='disabled')
 
-        self.remarks_var.set(item["Uwagi"])
+        self.remarks_var.set(item["Uwagi status"])
+        self.remarks_value.set(item["Uwagi"])
+
 
         # Wypełnianie zmiennych cenowych
         self.current_grinding_price_per_piece.set(float(item["Cena szlifowania"]))
@@ -578,6 +592,7 @@ class FrezyUI:
         self.bonus_price_var.set(float(item["Razem uslugi"]))
         self.total_price_var.set(float(item["Razem"]))
 
+
         try:
             self.current_coating_price_per_piece.set(float(item["Cena powlekania"]))
             self.current_coating_price.set(float(item["Razem powloka"]))
@@ -585,20 +600,12 @@ class FrezyUI:
             print("brak cen dla powlekania - ustawiam na 0.0")
             self.current_coating_price_per_piece.set(0.00)
             self.current_coating_price.set(0.00)
+        self.grinding_discount_value.set(int(item["Rabat ostrzenie"]))
+        self.coating_discount_value.set(int(item["Rabat powloka"]))
+        self.cutting_discount_value.set(int(item["Rabat ciecie"]))
+        self.lowering_discount_value.set(int(item["Rabat zanizenie"]))
+        print(self.grinding_discount_value.get())
 
-        '''
-        print("Wczytane ceny")
-        print(f"szlif : {self.current_grinding_price_per_piece.get()}")
-        print(f"szlif caly : {self.current_grinding_price.get()}")
-        print(f"ciecie : {self.current_grinding_price_per_piece.get()}")
-        print(f"ciecie cale : {self.current_grinding_price.get()}")
-        print(f"powloka : {self.current_coating_price_per_piece.get()}")
-        print(f"powloka cala : {self.current_coating_price.get()}")
-        print(f"zanizenie : {self.current_lowering_price_per_piece.get()}")
-        print(f"zaniezenie cala : {self.current_lowering_price.get()}")
-        print(f"uslugi suma : {self.bonus_price_var.get()}")
-        print(f"Wszystko suma: {self.total_price_var.get()}")
-        '''
 
         self.add_button.config(text= "Zapisz zmiany")
         self.update_price_labels()
