@@ -139,11 +139,23 @@ class CartMain:
             return False
 
     def update_cart_display(self, cart_tree):
-        """Aktualizuje wyświetlanie koszyka w tabeli."""
+        """Aktualizuje wyświetlanie koszyka w tabeli i opcjonalnie podświetla wybrany wiersz."""
         cart_tree.delete(*cart_tree.get_children())
         for idx, item in enumerate(self.items):
-            #uwagi = "✓" if item["Uwagi"] != "-" else "−"
-            #remarks_tag = "remarks_filled" if uwagi == "✓" else "remarks_empty"
+
+            # Sprawdź, czy któryś rabat jest różny od "0"
+            rabat_fields = [
+                item.get("Rabat ostrzenie", "0"),
+                item.get("Rabat powloka", "0"),
+                item.get("Rabat ciecie", "0"),
+                item.get("Rabat zanizenie", "0")
+            ]
+            highlight = any(r != "0" for r in rabat_fields)
+
+            # Dodaj tag jeśli trzeba podświetlić
+            tag_name = f"highlight_{idx}" if highlight else None
+            tags = (tag_name,) if tag_name else ()
+
             cart_tree.insert("", tk.END, iid=str(idx), values=(
                 idx + 1,
                 item.get("Nazwa", "-"),
@@ -159,7 +171,12 @@ class CartMain:
                 item.get("Cena powlekania", "-"),
                 item.get("Razem powloka", "-"),
                 item.get("Uwagi status")
-            ))
+            ),tags=tags)
+
+
+        #styl dla podswietlonego wiersza
+            if highlight:
+                cart_tree.tag_configure(f"highlight_{idx}", background="lightgreen")
 
     def delete_selected(self, cart_tree, client_name):
         """Usuwa wybrany element z koszyka."""

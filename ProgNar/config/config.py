@@ -26,3 +26,13 @@ WIERTLA_DIAMETER_OPTIONS = [
 WIERTLA_DEFAULT_DIAMETER = "8"
 WIERTLA_Z_OPTIONS = []
 WIERTLA_DEFAULT_Z = "2"
+
+SPEC_TYPES = [
+    ("Fazownik","Fazownik"),
+    ("Faz. Wklesły","Faz. Wklesly"),
+    ("Specjalne",'Specjalne')
+]
+SPEC_DIAMETER_OPTIONS = [
+    ("φ3", "3"), ("φ4", "4"), ("φ6", "6"),
+    ("φ8", "8"), ("φ10", "10"), ("φ12", "12"), ("φ16", "16")
+]

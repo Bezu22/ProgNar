@@ -8,6 +8,8 @@ class CartDisplay:
         self.root = root
         self.cart = cart
         self.main_app = main_app
+        self.sort_reverse = False  # domyślnie rosnąco
+        self.sort_directions = {}
         self.create_cart_table()
 
     def create_cart_table(self):
@@ -15,42 +17,40 @@ class CartDisplay:
         tree_scroll_frame = tk.Frame(self.parent, borderwidth=1, relief="solid")
         tree_scroll_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        columns = ("LP", "Nazwa", "Srednica", "fiChwyt", "Ilosc zebow", "Ilosc sztuk", "ciecie", "Cena/szt", "Wartosc", "Powlekanie", "L", "Cena powlekania/szt", "Wartosc powlekania", "Uwagi")
+        columns = ("LP", "Nazwa", "Srednica", "fiChwyt", "Ilosc ostrzy", "Ilosc sztuk", "ciecie", "Cena szlifowania", "Razem szlifowanie", "Powloka", "Dlugosc calkowita", "Cena powlekania", "Razem powloka", "Uwagi")
         self.cart_tree = ttk.Treeview(tree_scroll_frame, columns=columns, show="headings", height=10)
         self.cart_tree.heading("LP", text="L.P.")
-        self.cart_tree.heading("Nazwa", text="Nazwa")
-        self.cart_tree.heading("Srednica", text="φOD")
-        self.cart_tree.heading("fiChwyt", text="φChwyt")
-        self.cart_tree.heading("Ilosc zebow", text="z")
-        self.cart_tree.heading("Ilosc sztuk", text="Ilość sztuk")
-        self.cart_tree.heading("ciecie", text="cięcie")
-        self.cart_tree.heading("Cena/szt", text="Cena/szt")
-        self.cart_tree.heading("Wartosc", text="Netto")
-        self.cart_tree.heading("Powlekanie", text="Powłoka")
-        self.cart_tree.heading("L", text="L")
-        self.cart_tree.heading("Cena powlekania/szt", text="Cena powlekania/szt")
-        self.cart_tree.heading("Wartosc powlekania", text="Wartość powlekania")
+        self.cart_tree.heading("Nazwa", text="Nazwa", command=lambda: self.sort_by_column("Nazwa"))
+        self.cart_tree.heading("Srednica", text="φOD", command=lambda: self.sort_by_column("Srednica",is_numeric=True))
+        self.cart_tree.heading("fiChwyt", text="φChwyt", command=lambda: self.sort_by_column("fiChwyt",is_numeric=True))
+        self.cart_tree.heading("Ilosc ostrzy", text="z", command=lambda: self.sort_by_column("Ilosc ostrzy",is_numeric=True))
+        self.cart_tree.heading("Ilosc sztuk", text="Ilość sztuk", command=lambda: self.sort_by_column("Ilosc sztuk",is_numeric=True))
+        self.cart_tree.heading("ciecie", text="cięcie",command=lambda: self.sort_by_column("ciecie",is_numeric=True))
+        self.cart_tree.heading("Cena szlifowania", text="Cena/szt", command=lambda: self.sort_by_column("Cena szlifowania",is_numeric=True))
+        self.cart_tree.heading("Razem szlifowanie", text="Netto", command=lambda: self.sort_by_column("Razem szlifowanie",is_numeric=True))
+        self.cart_tree.heading("Powloka", text="Powłoka",command=lambda: self.sort_by_column("Powloka"))
+        self.cart_tree.heading("Dlugosc calkowita", text="L",command=lambda: self.sort_by_column("Dlugosc calkowita",is_numeric=True))
+        self.cart_tree.heading("Cena powlekania", text="Cena powlekania/szt",command=lambda: self.sort_by_column("Cena powlekania",is_numeric=True))
+        self.cart_tree.heading("Razem powloka", text="Wartość powlekania",command=lambda: self.sort_by_column("Razem powloka",is_numeric=True))
         self.cart_tree.heading("Uwagi", text="Uwagi")
 
         self.cart_tree.column("LP", width=50, anchor=tk.CENTER)
         self.cart_tree.column("Nazwa", width=130, anchor=tk.CENTER)
         self.cart_tree.column("Srednica", width=60, anchor=tk.CENTER)
         self.cart_tree.column("fiChwyt", width=60, anchor=tk.CENTER)
-        self.cart_tree.column("Ilosc zebow", width=50, anchor=tk.CENTER)
+        self.cart_tree.column("Ilosc ostrzy", width=50, anchor=tk.CENTER)
         self.cart_tree.column("Ilosc sztuk", width=80, anchor=tk.CENTER)
         self.cart_tree.column("ciecie", width=50, anchor=tk.CENTER)
-        self.cart_tree.column("Cena/szt", width=80, anchor=tk.CENTER)
-        self.cart_tree.column("Wartosc", width=80, anchor=tk.CENTER)
-        self.cart_tree.column("Powlekanie", width=100, anchor=tk.CENTER)
-        self.cart_tree.column("L", width=60, anchor=tk.CENTER)
-        self.cart_tree.column("Cena powlekania/szt", width=100, anchor=tk.CENTER)
-        self.cart_tree.column("Wartosc powlekania", width=100, anchor=tk.CENTER)
+        self.cart_tree.column("Cena szlifowania", width=80, anchor=tk.CENTER)
+        self.cart_tree.column("Razem szlifowanie", width=80, anchor=tk.CENTER)
+        self.cart_tree.column("Powloka", width=100, anchor=tk.CENTER)
+        self.cart_tree.column("Dlugosc calkowita", width=60, anchor=tk.CENTER)
+        self.cart_tree.column("Cena powlekania", width=100, anchor=tk.CENTER)
+        self.cart_tree.column("Razem powloka", width=100, anchor=tk.CENTER)
         self.cart_tree.column("Uwagi", width=120, anchor=tk.CENTER)
 
         style = ttk.Style()
         style.configure("Treeview", font=("Arial", 10), anchor="center")
-        style.configure("remarks_filled", font=("Arial Black", 12, "bold"), foreground="green")
-        style.configure("remarks_empty", font=("Arial Black", 12, "bold"), foreground="red")
         self.cart_tree.bind('<Double-Button-1>', self.handle_tree_click)
 
         v_scrollbar = ttk.Scrollbar(tree_scroll_frame, orient=tk.VERTICAL, command=self.cart_tree.yview)
@@ -82,3 +82,84 @@ class CartDisplay:
     def get_cart_tree(self):
         """Zwraca obiekt Treeview koszyka."""
         return self.cart_tree
+
+    def sort_by_column(self, column_name, is_numeric=False):
+        """Sortuje dane po wskazanej kolumnie — tekstowej lub liczbowej."""
+        # Odwróć kierunek sortowania dla tej kolumny
+        reverse = self.sort_directions.get(column_name, False)
+        self.sort_directions[column_name] = not reverse
+
+        # Funkcja pomocnicza do konwersji
+        def normalize(val):
+            if val in ("-", "", None):
+                return 0 if is_numeric else ""
+            if val in ("+"):
+                return 1 if is_numeric else ""
+            if is_numeric:
+                try:
+                    if isinstance(val, (int, float)):
+                        return val
+                    return float(str(val).replace(",", "."))
+                except (ValueError, TypeError):
+                    return 0
+            else:
+                return str(val).lower()
+
+        # Posortuj dane
+        sorted_items = sorted(
+            self.cart.items,
+            key=lambda x: normalize(x.get(column_name)),
+            reverse=reverse
+        )
+
+        # Zaktualizuj dane i odśwież tabelę
+        self.cart.items = sorted_items
+        self.cart.update_cart_display(self.cart_tree)
+
+    def sort_by_name(self):
+        """Sortuje dane w koszyku po nazwie i aktualizuje tabelę."""
+        # Odwróć kierunek sortowania
+        reverse = self.sort_directions.get("Nazwa", False)
+        self.sort_directions["Nazwa"] = not reverse
+
+        # Posortuj dane
+        sorted_items = sorted(
+            self.cart.items,
+            key=lambda x: x.get("Nazwa", "").lower(),
+            reverse=reverse  # ← tu była pomyłka
+        )
+
+        # Zaktualizuj dane w obiekcie
+        self.cart.items = sorted_items
+
+        # Odśwież tabelę
+        self.cart.update_cart_display(self.cart_tree)
+
+    def sort_by_value(self,column_name):
+        """Sortuje dane po wybranej kolumnie liczbowej."""
+        # Odwróć kierunek sortowania dla tej kolumny
+        reverse = self.sort_directions.get(column_name, False)
+        self.sort_directions[column_name] = not reverse
+
+        # Posortuj dane
+        def safe_number(val):
+            try:
+                if val in ("-", "", None):
+                    return 0
+                if val in ("+"):
+                    return 1
+                if isinstance(val, (int, float)):
+                    return val
+                return float(str(val).replace(",", "."))
+            except (ValueError, TypeError):
+                return 0
+
+        sorted_items = sorted(
+            self.cart.items,
+            key=lambda x: safe_number(x.get(column_name, 0)),
+            reverse=reverse
+        )
+
+        # Zaktualizuj dane i odśwież tabelę
+        self.cart.items = sorted_items
+        self.cart.update_cart_display(self.cart_tree)

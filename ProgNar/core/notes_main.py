@@ -360,24 +360,6 @@ class NotesMenu:
                 current_price.set(discounted_price)
                 label_widget.config(text=f"{label_text}: {discounted_price:.2f} zł", fg='green')
 
-    '''def on_discount_change(self, event, discount_var, default_price_var, label_widget):
-        try:
-            value = int(discount_var.get())
-        except TclError:
-            print("Niepoprawna wartość")
-            discount_var.set(0)
-            label_widget.config(text=f"Cena szt: {default_price_var.get():.2f} zł", fg='black')
-            return
-
-        if value <= 0 or value > 100:
-            label_widget.config(text=f"Cena szt: {default_price_var.get():.2f} zł", fg='black')
-            
-        else:
-            discounted_price = float(default_price_var.get()) * (1 - (value / 100))
-            label_widget.config(text=f"Cena szt: {discounted_price:.2f} zł", fg='green')'''
-
-
-
     def disable_discouts_if_zero(self):
         discount_sets = [
             (self.grinding_discount, self.current_grinding_price_per_piece, self.grinding_discount_checkbutton,
@@ -390,7 +372,6 @@ class NotesMenu:
              self.lowering_discount_entry)
         ]
         for discount_var, current_price_var, checkbox_widget, entry_widget in discount_sets:
-            print(current_price_var.get())
             if float(current_price_var.get()) == 0.00:
                 checkbox_widget.config(state='disabled')
                 entry_widget.config(state='disabled')
@@ -432,7 +413,6 @@ class NotesMenu:
             self.cart.save_to_file(self.main_app.client_name)
         except Exception as e:
             messagebox.showerror("Błąd", f"Nie udało się zapisać uwag: {str(e)}")
-
         self.main_app.handle_save()
         self.window.destroy()
 

@@ -425,10 +425,10 @@ class WiertlaUI:
             "Srednica": self.diameter_var.get(),
             "fiChwyt": self.chwyt_var.get(),
             "Ilosc ostrzy": self.z_var.get(),
-            "Ilosc sztuk": int(self.quantity_var.get()),
+            "Ilosc sztuk": self.quantity_var.get(),
             "ciecie": "+" if self.ciecie_var.get() else "-",
             "Powloka": self.coating_var.get(),
-            "Długość całkowita": str(self.length_var.get()),
+            "Dlugosc calkowita": str(self.length_var.get()),
             "Uwagi status": self.remarks_var.get(),
             "Uwagi": self.remarks_value.get(),
             "Stopnie": self.step_var.get()
@@ -555,7 +555,7 @@ class WiertlaUI:
         self.quantity_var.set(str(item["Ilosc sztuk"]))
         self.ciecie_var.set(item["ciecie"] == "+")
         self.coating_var.set(item["Powloka"])
-        self.length_var.set(item["Długość całkowita"])
+        self.length_var.set(item["Dlugosc calkowita"])
         if "(s:" in item["Nazwa"]:
             self.ik_var.set(True)
             self.ik_value_var.set(item["Nazwa"].split("(IK:")[1].rstrip(")"))

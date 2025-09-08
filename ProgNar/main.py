@@ -41,7 +41,7 @@ class ToolPricingApp:
             main_app = self
         )
 
-    def handle_save(self):
+    def handle_save(self,highlight_idx = None):
         """Handles the save action"""
         self.cart.update_cart_display(self.cart_tree)  # Directly update the cart display
         self.bottom.update_price_labels()

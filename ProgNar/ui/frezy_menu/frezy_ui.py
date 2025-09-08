@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 import math ,json
-#from statistics import quantiles
 from tkinter import messagebox
 from config.utils import add_separator, validate_positive_int, resource_path, get_grinding_price,get_cutting_price,get_coating_price
 from config.ui_utils import update_button_styles
@@ -516,7 +515,7 @@ class FrezyUI:
             "Ilosc sztuk": self.quantity_var.get(),
             "ciecie": "+" if self.ciecie_var.get() else "-",
             "Powloka": self.coating_var.get(),
-            "Długość całkowita": str(self.length_var.get()),
+            "Dlugosc calkowita": str(self.length_var.get()),
             "Uwagi status": self.remarks_var.get(),
             "Uwagi": self.remarks_value.get()
         }
@@ -569,7 +568,7 @@ class FrezyUI:
         self.quantity_var.set(str(item["Ilosc sztuk"]))
         self.ciecie_var.set(item["ciecie"] == "+")
         self.coating_var.set(item["Powloka"])
-        self.length_var.set(item["Długość całkowita"])
+        self.length_var.set(item["Dlugosc calkowita"])
         if "(s:" in item["Nazwa"]:
             self.s_var.set(True)
             self.s_value_var.set(item["Nazwa"].split("(s:")[1].rstrip(")"))
