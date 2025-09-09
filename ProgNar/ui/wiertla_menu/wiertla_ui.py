@@ -122,7 +122,7 @@ class WiertlaUI:
     def create_blades_section(self):
         self.step_default = '2'
         # Główny kontener
-        container = tk.Frame(self.top, relief='solid', bd=2)
+        container = tk.Frame(self.top)
         container.pack(fill='x', pady=3)
 
         # Kontener poziomy dla obu sekcji
