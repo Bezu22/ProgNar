@@ -52,9 +52,10 @@ class PozostaleUI:
         self.lowering_discount_value = tk.IntVar(value=0)
 
         self.special_name_var = tk.StringVar(value="Narzędzie specjalne")
-        self.special_price_value = tk.DoubleVar(value = 40.0)
+        self.special_price_value = tk.StringVar(value = '40.0')
         self.chamfer_angle_var = tk.StringVar(value="90")
         self.chamfer_radius_var = tk.StringVar(value="1.0")
+        self.is_blades_var = tk.BooleanVar(value = True)
         # Sekcje UI
         self.create_type_section()
         self.create_diameter_section()
@@ -170,12 +171,18 @@ class PozostaleUI:
     def create_blades_section(self):
         container = tk.Frame(self.top)
         container.pack(pady=1)
+        self.frame_for_blades_checkbutton = tk.Frame(container)
+
+        self.blades_checkbutton = tk.Checkbutton(self.frame_for_blades_checkbutton,variable=self.is_blades_var,command=self.turn_blades_on_and_off)
+        self.blades_checkbutton.pack()
+
 
         tk.Label(container, text="Podaj ilość ostrzy:", font=("Arial", 12)).pack(padx=5,side='left')
         self.z_entry = tk.Entry(container, textvariable=self.z_var, width=8, bg='#D6E8CF')
         self.z_entry.pack(pady=1,side='left')
         self.z_entry.bind("<KeyRelease>", self.on_z_entry_change)
         add_separator(self.top)
+
     def create_quantity_section(self):
         frame = tk.Frame(self.top)
         frame.pack(pady=2)
@@ -250,6 +257,8 @@ class PozostaleUI:
                                              text=f" "
                                                   , font=("Arial", 10),
                                              anchor='w')
+        self.free_label.grid(row=1, column=0, sticky='w', padx=5, pady=2)
+
 
         self.coating_price_label = tk.Label(self.price_labels_container_frame,
                                             text=f"Cena powłoki: {self.current_coating_price_per_piece.get():.2f} zł / "
@@ -259,6 +268,15 @@ class PozostaleUI:
         self.coating_price_label.grid(row=2, column=0, sticky='w', padx=5, pady=2)
 
         #UKRYTY
+
+        #--
+        #Prawe labele
+        self.grinding_price_label = tk.Label(self.price_labels_container_frame,
+                                             text=f"Cena ostrzenia: {self.current_grinding_price.get():.2f} zł / "
+                                                  f"{self.current_grinding_price.get():.2f} zł", font=("Arial", 10),
+                                             anchor='e')
+        self.grinding_price_label.grid(row=0, column=1, sticky='e', padx=5, pady=2)
+
         self.price_edit_frame = tk.Frame(self.price_labels_container_frame)
         self.cutting_price_label_small = tk.Label(
             self.price_edit_frame,
@@ -274,18 +292,15 @@ class PozostaleUI:
             justify="left",
             width=6
         )
-        self.cutting_price_entry.pack(side='left')
-        #--
-        # Prawe labele
-        self.grinding_price_label = tk.Label(self.price_labels_container_frame,
-                                             text=f"Cena ostrzenia: {self.current_grinding_price.get():.2f} zł / "
-                                                  f"{self.current_grinding_price.get():.2f} zł", font=("Arial", 10),
-                                             anchor='e')
-        self.grinding_price_label.grid(row=0, column=1, sticky='e', padx=5, pady=2)
+        self.cutting_price_entry.pack(side='left',padx=15)
+        self.cutting_price_entry.bind("<KeyRelease>", self.on_price_entry)
 
-        self.bonus_price_label = tk.Label(self.price_labels_container_frame, text=f"Cena usług: {self.bonus_price_var.get():.2f} zł",
-                                          font=("Arial", 10), anchor='e')
-        self.bonus_price_label.grid(row=1, column=1, sticky='e', padx=5, pady=2)
+
+
+
+        # self.bonus_price_label = tk.Label(self.price_labels_container_frame, text=f"Cena usług: {self.bonus_price_var.get():.2f} zł",
+        #                                   font=("Arial", 10), anchor='e')
+        # self.bonus_price_label.grid(row=1, column=1, sticky='e', padx=5, pady=2)
 
         self.total_price_label = tk.Label(self.price_labels_container_frame, text=f"Wartość całkowita: {self.total_price_var.get():.2f} zł",
                                           font=("Arial Bold", 10), anchor='e', bg='#FCBABA', borderwidth=3,
@@ -301,16 +316,17 @@ class PozostaleUI:
         self.type_var.set(selected_type)
         if selected_type == "Specjalne":
             self.special_name_frame.pack(pady=2)
-            # Ukryj zwykły label
-            self.cutting_price_label.grid_forget()
-            # Pokaż mały label + entry obok siebie
-            self.price_edit_frame.grid(row=0, column=0, sticky='w', padx=5, pady=2)
+            # Ukryj zwykły label CENOWY
+            # Pokaż entry na cene
+            self.price_edit_frame.grid(row=1,column=1, sticky='w', padx=39, pady=2)
+            #daj opcje wylaczenia ilosci zebow
+            self.frame_for_blades_checkbutton.pack(side='left')
         else:
             self.special_name_frame.pack_forget()
-            # Ukryj entry i mały label
+            # Ukryj entry
             self.price_edit_frame.grid_forget()
-            # Przywróć zwykły label
-            self.cutting_price_label.grid(row=0, column=0, sticky='w', padx=5, pady=2)
+            #usun opcje wylaczania z
+            self.frame_for_blades_checkbutton.pack_forget()
         if selected_type == "Fazownik":
             self.chamfer_angle_frame.pack(pady=2)
         else:
@@ -365,7 +381,7 @@ class PozostaleUI:
     def on_z_entry_change(self, event=None):
             """Walidacja inputu."""
             z_input = self.z_var.get().replace(",", ".")
-            z_default = "2"
+            z_default = "4"
             try:
                 if not z_input.strip():
                     raise ValueError
@@ -409,6 +425,23 @@ class PozostaleUI:
         if hasattr(self, 'grinding_price_label') and self.grinding_price_label is not None:
             self.update_price_labels()
 
+    def on_price_entry(self,event=None):
+        """Walidacja inputu srednicy."""
+
+        price_input = self.special_price_value.get().replace(",", ".")
+        price_default = 12.34
+        # Obsluga pustego pola
+        try:
+            price_float = float(price_input)
+            if price_float == 0:
+                raise ValueError
+        except ValueError:
+            self.special_price_value.set(price_default)
+            return
+
+        self.special_price_value.set(price_input)
+        self.update_price_labels()
+
     def add_to_cart(self):
         # Zbieranie parametrów frezu
         nazwa = self.type_var.get()
@@ -435,7 +468,8 @@ class PozostaleUI:
             "Razem ciecie": f"{self.current_cutting_price.get():.2f}",
             "Cena zanieznia": f"{self.current_lowering_price_per_piece.get():.2f}",
             "Razem zanieznia": f"{self.current_lowering_price.get():.2f}",
-            "Razem uslugi": f"{self.bonus_price_var.get():.2f}",
+            #przypisuje ciecie bo jest jedynym extrasem tu a musi zostac do temp_cart.json
+            "Razem uslugi": f"{self.current_cutting_price.get():.2f}",
             "Razem": f"{self.total_price_var.get():.2f}",
             "Rabat ostrzenie": f"{self.grinding_discount_value.get()}",
             "Rabat powloka": f"{self.coating_discount_value.get()}",
@@ -463,7 +497,85 @@ class PozostaleUI:
             self.quantity_var
         )
         print(self.grinding_price)
+        if not self.grinding_price == None:
+            self.current_grinding_price_per_piece.set(self.grinding_price)
+            self.current_grinding_price.set(self.grinding_price * float(self.quantity_var.get()))
+
+        else:
+            self.grinding_price = self.special_price_value.get()
+            self.current_grinding_price_per_piece.set(self.grinding_price)
+            self.current_grinding_price.set(float(self.grinding_price) * float(self.quantity_var.get()))
+        self.grinding_price_label.config(
+            text=f"Cena ostrzenia: {self.current_grinding_price_per_piece.get():.2f} zł / {self.current_grinding_price.get():.2f} zł",
+            font=("Arial", 10))
+
+
+
+
+        if self.ciecie_var.get():
+            # Checkbox zaznaczony — dodaj cenę cięcia
+            self.ciecie_price = get_cutting_price(self.diameter_var)
+            self.current_cutting_price_per_piece.set(self.ciecie_price)
+            self.current_cutting_price.set(self.ciecie_price * int(self.quantity_var.get()))
+
+            self.cutting_price_label.config(
+                text=f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
+                     f"{self.current_cutting_price.get():.2f} zł", font=("Arial", 10))
+        else:
+            # Checkbox odznaczony — usuń cenę cięcia
+            self.ciecie_price = 0.00
+            self.current_cutting_price_per_piece.set(self.ciecie_price)
+            self.current_cutting_price.set(self.ciecie_price)
+            self.cutting_price_label.config(
+                text=f"Cena cięcia: {self.ciecie_price:.2f} zł/ "
+                     f"{self.ciecie_price * int(self.quantity_var.get()):.2f} zł", font=("Arial", 10))
+
+        # POWLOKA
+        if self.coating_var.get() == "BRAK":
+            self.coating_price = 0.00
+            self.current_coating_price_per_piece.set(self.coating_price)
+            self.current_coating_price.set(self.coating_price)
+        else:
+            self.coating_price = get_coating_price(self.diameter_var.get(), self.coating_var.get(),
+                                                   self.length_var.get(), self.coating_data)
+            self.current_coating_price_per_piece.set(self.coating_price)
+            self.current_coating_price.set(self.coating_price * int(self.quantity_var.get()))
+        self.coating_price_label.config(
+            text=f"Cena powłoki: {self.current_coating_price_per_piece.get():.2f} zł / "
+                 f"{self.current_coating_price.get():.2f} zł", font=("Arial", 10))
+
+        # # EXTRAS
+        # self.extras_price = self.current_cutting_price.get()
+        # self.bonus_price_var.set(self.extras_price)
+        # self.bonus_price_label.config(
+        #     text=f"Cena usług: {self.bonus_price_var.get():.2f} zł", font=("Arial", 10))
+        # TOTAL
+        self.total_price = self.current_grinding_price.get() + self.current_cutting_price.get()
+        self.total_price_var.set(self.total_price)
+        self.total_price_label.config(
+            text=f"Wartość całkowita: {self.total_price_var.get():.2f} zł", font=("Arial", 10))
+
+
+
+
+
+
 
     def load_coating_json(self ):
         with open(resource_path("data/cennik_powloki.json"), "r", encoding="utf-8") as f:
             return json.load(f)
+
+    def turn_blades_on_and_off(self):
+
+        if self.is_blades_var.get() is False:
+            self.z_entry.config(state='disabled')  # zablokuj
+            self.z_var.set("0")
+            #TODO:w add_to_cart dodaj walidacje 0 w obie strony '-' do pliku jesli z=0 i odwrotnie, jak zaczyta '-' to z=0, entry disabled
+        else:
+            self.z_entry.config(state='normal')  # odblokuj
+            self.z_var.set("4")
+
+#TODO: dodaj walidacje ceny wpisywanej przy specjalu
+#TODO: liczenie cen w przypadku recznej wartosci - done
+#TODO: Zapis specjalnej nazwy jako 'Type"
+#TODO: Dopisy do nazw dla fazownikow (kat/promien)

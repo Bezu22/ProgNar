@@ -99,14 +99,12 @@ def get_special_grinding_price(tool_type_var, num_blades_var, diameter_var, quan
         if not tool_data:
             print("Brak Tool Type")
             return None
-        print(f"znaleziono: {tool_type}")
         #Ilosc ostrzy
         blade_category = "2-4" if 2 <= num_blades <= 4 else "pozostale"
         blade_data = tool_data["ilosc_ostrzy"].get(blade_category)
         if not blade_data:
             print("Brak ilsoci ostrzy")
             return None
-        print(f"znaleziono kategorie: {blade_category}")
             # zakres srednicy
         for entry in blade_data["cennik"]:
             zakres = entry["zakres_srednicy"]
