@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox, filedialog
 from config.utils import resource_path
 from ui.frezy_menu.frezy_ui import FrezyUI
 from ui.wiertla_menu.wiertla_ui import WiertlaUI
+from ui.pozostale_menu.pozostale_ui import PozostaleUI
 from ui.main_menu.cart_display import CartDisplay
 #from tools_menu.wiertla_menu import WiertlaMenu
 #from tools_menu.pozostale_menu import PozostaleMenu
@@ -30,7 +31,7 @@ class CartMain:
             "Uwagi": params["Uwagi"],
             "Uwagi status": params["Uwagi status"],
             "Powloka": params["Powloka"],
-            "Długość całkowita": params["Długość całkowita"],
+            "Dlugosc calkowita": params["Dlugosc calkowita"],
             "Cena szlifowania": prices["Cena szlifowania"],
             "Razem szlifowanie": prices["Razem szlifowanie"],
             "Cena powlekania": prices["Cena powlekania"] if params["Powloka"] != "BRAK" else "-",
@@ -44,6 +45,7 @@ class CartMain:
             "Rabat ciecie": prices["Rabat ciecie"],
             "Rabat zanizenie": prices["Rabat zanizenie"]
         }
+
         if "Stopnie" in params:
             item["Stopnie"] = params["Stopnie"]
 
@@ -167,7 +169,7 @@ class CartMain:
                 item.get("Cena szlifowania", "-"),
                 item.get("Razem szlifowanie", "-"),
                 item.get("Powloka", "-"),
-                item.get("Długość całkowita", "-"),
+                item.get("Dlugosc calkowita", "-"),
                 item.get("Cena powlekania", "-"),
                 item.get("Razem powloka", "-"),
                 item.get("Uwagi status")
@@ -210,6 +212,9 @@ class CartMain:
                 return
             if item["Nazwa"].startswith("Wiertlo") :
                 WiertlaUI(root,cart,client_name,handle_save,index)
+                return
+            if item["Nazwa"].startswith("Fazo") or item["Nazwa"].startswith("Wkl") or item["Nazwa"].startswith("*"):
+                PozostaleUI(root, cart, client_name, handle_save, index)
                 return
             else:
                 messagebox.showwarning("Błąd", "Problem.", parent=root)

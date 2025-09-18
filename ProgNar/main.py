@@ -46,9 +46,6 @@ class ToolPricingApp:
         self.cart.update_cart_display(self.cart_tree)  # Directly update the cart display
         self.bottom.update_price_labels()
 
-    def generate_report(self):
-        generate_report(self.client_name, self)
-
 if __name__ == "__main__":
     root = tk.Tk()
     app = ToolPricingApp(root)

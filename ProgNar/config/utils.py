@@ -167,7 +167,6 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
     else:
         print("Nieznany cennik")
         wybrany_cennik = cennik_frezy_path
-
     with open(wybrany_cennik, "r", encoding="utf-8") as f:
         data = json.load(f)
         #1. Typ

@@ -66,10 +66,10 @@ class PozostaleUI:
         self.create_action_buttons()
 
         self.update_price_labels()
-        #
-        # # Jeśli edytujemy, wypełnij pola danymi z pozycji
-        # if edit_index is not None:
-        #     self.load_item_data()
+
+        # Jeśli edytujemy, wypełnij pola danymi z pozycji
+        if edit_index is not None:
+            self.load_item_data()
 
 
     def create_type_section(self):
@@ -446,11 +446,22 @@ class PozostaleUI:
         # Zbieranie parametrów frezu
         nazwa = self.type_var.get()
         #ustaw nazwe
+        if nazwa == 'Fazownik':
+            nazwa += f" (k={self.chamfer_angle_var.get()})"
+        elif nazwa == 'Wklesly':
+            nazwa += f" (r={self.chamfer_radius_var.get()})"
+        else:
+            nazwa = f"*{self.special_name_var.get()}"
+        #ustaw zeby
+        z_var = self.z_var.get()
+        if self.z_var.get() == '0':
+            z_var = '-'
+
         params = {
             "Nazwa": nazwa,
             "Srednica": self.diameter_var.get(),
             "fiChwyt": self.chwyt_var.get(),
-            "Ilosc ostrzy": self.z_var.get(),
+            "Ilosc ostrzy": z_var,
             "Ilosc sztuk": self.quantity_var.get(),
             "ciecie": "+" if self.ciecie_var.get() else "-",
             "Powloka": self.coating_var.get(),
@@ -555,11 +566,76 @@ class PozostaleUI:
         self.total_price_label.config(
             text=f"Wartość całkowita: {self.total_price_var.get():.2f} zł", font=("Arial", 10))
 
+    def load_item_data(self):
+        """Wypełnia pola danymi edytowanej pozycji."""
+        item = self.cart.items[self.edit_index]
+        #TYP
+        type = item["Nazwa"]
+        #TODO NIE RUSZONA FUNKCJA - DO ZROBIENIA
+        if type.startswith("Fazownik"):
+            self.select_type("Fazownik")
+            value = float(type.split("k=")[1].split(")")[0].strip())
+            self.chamfer_angle_var.set(str(value))
+        elif type.startswith("Wklesly"):
+            self.select_type("Wklesly")
+            value = float(type.split("r=")[1].split(")")[0].strip())
+            self.chamfer_radius_var.set(str(value))
+        else:
+            self.select_type("Specjalne")
+            value = type
+            self.special_name_var.set(value)
+
+        #SREDNICE
+        new_diam = item["Srednica"]
+        self.diameter_var.set(new_diam)
+        update_button_styles(self.diameter_buttons, new_diam)
+        self.chwyt_var.set(item["fiChwyt"])
+        #zeby
+        new_z = item["Ilosc ostrzy"]
+        if new_z=="-":
+            self.z_var.set("0")
+            self.is_blades_var.set(False)
+            self.z_entry.config(state="disabled")
+        else:
+            self.z_var.set(new_z)
+
+        self.quantity_var.set(str(item["Ilosc sztuk"]))
+        self.ciecie_var.set(item["ciecie"] == "+")
+        self.coating_var.set(item["Powloka"])
+        self.length_var.set(item["Dlugosc calkowita"])
 
 
+        self.remarks_var.set(item["Uwagi status"])
+        self.remarks_value.set(item["Uwagi"])
 
 
+        # Wypełnianie zmiennych cenowych
+        self.current_grinding_price_per_piece.set(float(item["Cena szlifowania"]))
+        self.current_grinding_price.set(float(item["Razem szlifowanie"]))
+        self.current_cutting_price_per_piece.set(float(item["Cena ciecia"]))
+        self.current_cutting_price.set(float(item["Razem ciecie"]))
+        self.current_lowering_price_per_piece.set(float(item["Cena zanieznia"]))
+        self.current_lowering_price.set(float(item["Razem zanieznia"]))
+        self.bonus_price_var.set(float(item["Razem uslugi"]))
+        self.total_price_var.set(float(item["Razem"]))
 
+
+        try:
+            self.current_coating_price_per_piece.set(float(item["Cena powlekania"]))
+            self.current_coating_price.set(float(item["Razem powloka"]))
+        except ValueError:
+            print("brak cen dla powlekania - ustawiam na 0.0")
+            self.current_coating_price_per_piece.set(0.00)
+            self.current_coating_price.set(0.00)
+        self.grinding_discount_value.set(int(item["Rabat ostrzenie"]))
+        self.coating_discount_value.set(int(item["Rabat powloka"]))
+        self.cutting_discount_value.set(int(item["Rabat ciecie"]))
+        self.lowering_discount_value.set(int(item["Rabat zanizenie"]))
+        print(self.grinding_discount_value.get())
+
+
+        self.add_button.config(text= "Zapisz zmiany")
+        self.update_price_labels()
 
     def load_coating_json(self ):
         with open(resource_path("data/cennik_powloki.json"), "r", encoding="utf-8") as f:
@@ -570,12 +646,7 @@ class PozostaleUI:
         if self.is_blades_var.get() is False:
             self.z_entry.config(state='disabled')  # zablokuj
             self.z_var.set("0")
-            #TODO:w add_to_cart dodaj walidacje 0 w obie strony '-' do pliku jesli z=0 i odwrotnie, jak zaczyta '-' to z=0, entry disabled
         else:
             self.z_entry.config(state='normal')  # odblokuj
             self.z_var.set("4")
 
-#TODO: dodaj walidacje ceny wpisywanej przy specjalu
-#TODO: liczenie cen w przypadku recznej wartosci - done
-#TODO: Zapis specjalnej nazwy jako 'Type"
-#TODO: Dopisy do nazw dla fazownikow (kat/promien)
