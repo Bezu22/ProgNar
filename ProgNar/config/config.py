@@ -29,7 +29,7 @@ WIERTLA_DEFAULT_Z = "2"
 
 SPEC_TYPES = [
     ("Fazownik","Fazownik"),
-    ("Faz. Wklesły","Faz. Wklesly"),
+    ("Wklesły","Wklesly"),
     ("Specjalne",'Specjalne')
 ]
 SPEC_DIAMETER_OPTIONS = [

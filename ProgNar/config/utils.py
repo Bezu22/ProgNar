@@ -28,7 +28,7 @@ def validate_positive_int(value):
         return int(value) > 0
     return False
 
-def add_separator(parent, color="#f21821", thickness=1, pady=10):
+def add_separator(parent, color="#f21821", thickness=1, pady=5):
     """Dodaje wizualny separator."""
     separator = tk.Frame(parent, bg=color, height=thickness)
     separator.pack(fill="x", pady=pady)
@@ -82,6 +82,67 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+def get_special_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var):
+    tool_type = tool_type_var.get().strip().split(" (")[0]
+    try:
+        num_blades = int(num_blades_var.get().strip())
+        diameter = float(diameter_var.get().replace(",", ".").strip())
+        quantity = int(quantity_var.get())
+    except ValueError:
+        print("Błąd konwersji danych wejściowych")
+        return None
+    cennik = resource_path("data/cennik_pozostale.json")
+    with open(cennik, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        # 1. Typ
+        tool_data = data.get(tool_type)
+        if not tool_data:
+            print("Brak Tool Type")
+            return None
+        #Ilosc ostrzy
+        blade_category = "2-4" if 2 <= num_blades <= 4 else "pozostale"
+        blade_data = tool_data["ilosc_ostrzy"].get(blade_category)
+        if not blade_data:
+            print("Brak ilsoci ostrzy")
+            return None
+            # zakres srednicy
+        for entry in blade_data["cennik"]:
+            zakres = entry["zakres_srednicy"]
+            if zakres.startswith("do"):
+                max_diameter = float(zakres.split(" ")[1])
+                if diameter <= max_diameter:
+                    price_table = entry["ceny"]
+                    break
+            else:
+                min_d, max_d = map(float, zakres.split(" - "))
+                if min_d <= diameter <= max_d:
+                    price_table = entry["ceny"]
+                    break
+                # Track the price table for the highest range
+                if max_d > (locals().get('last_max_d', 0)):
+                    last_max_d = max_d
+                    last_price_table = entry["ceny"]
+        else:
+            # If no range matches, use the price table for the highest range
+            price_table = last_price_table
+        # Ilosc sztuk
+        if quantity == 1:
+            qty_key = "1"
+        elif 2 <= quantity <= 4:
+            qty_key = "2-4"
+        elif 5 <= quantity <= 10:
+            qty_key = "5-10"
+        elif 11 <= quantity <= 20:
+            qty_key = "11-20"
+        else:
+            qty_key = "11-20"  # lub inna logika dla większych ilości
+
+        # debug
+        print(f"Typ: {tool_type}, Ostrza: {num_blades}, Średnica: {diameter}, Ilość: {quantity}, Cena: {price_table.get(qty_key)}")
+        # pobierz cene
+        return price_table.get(qty_key)
+
+
 def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var):
     #konwersja ze StripVar
     tool_type = tool_type_var.get().strip().split(" (")[0]
@@ -106,7 +167,6 @@ def get_grinding_price(tool_type_var, num_blades_var, diameter_var, quantity_var
     else:
         print("Nieznany cennik")
         wybrany_cennik = cennik_frezy_path
-
     with open(wybrany_cennik, "r", encoding="utf-8") as f:
         data = json.load(f)
         #1. Typ

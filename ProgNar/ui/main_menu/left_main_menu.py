@@ -4,7 +4,6 @@ from config.utils import resource_path
 from ui.frezy_menu.frezy_ui import FrezyUI
 from ui.wiertla_menu.wiertla_ui import WiertlaUI
 from ui.pozostale_menu.pozostale_ui import PozostaleUI
-from tools_menu.uslugi_menu import UslugiMenu
 from config.cenniki import CennikiMenu
 
 class LeftMenu:
@@ -125,7 +124,7 @@ class LeftMenu:
 
     def show_uslugi_menu(self):
         """Otwiera menu usług."""
-        UslugiMenu(self.root, self.cart, main_app=self.main_app)
+        pass
 
     def show_cenniki_menu(self):
         """Otwiera menu cenników."""

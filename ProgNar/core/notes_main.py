@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import TclError
 from tkinter import messagebox
-from config.utils import get_grinding_price,get_cutting_price,get_coating_price
+from config.utils import get_grinding_price,get_cutting_price,get_coating_price,get_special_grinding_price
 
 class NotesMenu:
     """Klasa zarządzająca oknem edycji uwag dla pozycji w koszyku."""
@@ -36,6 +36,13 @@ class NotesMenu:
                                                                               z,
                                                                               diam,
                                                                               self.quantity))
+        try:
+            if self.default_grinding_price.get() == "0.0":
+                self.default_grinding_price.set(get_special_grinding_price(self.type,
+                                                                           z,
+                                                                           diam,self.quantity))
+        except TclError:
+            self.default_grinding_price.set("0.00")
         if self.type.get().startswith("Wiert"):
             stopnie = int(self.step_amount.get())
             while stopnie > 2:
@@ -148,7 +155,7 @@ class NotesMenu:
         ).pack(anchor="nw", pady=5)
 
         # Pole tekstowe na uwagi (3 linie)
-        self.remarks_text = tk.Text(self.main_frame, height=1, width=40, font=("Arial", 10), relief='solid', bd=2)
+        self.remarks_text = tk.Text(self.main_frame, height=1, width=40, font=("Arial", 10))
         self.remarks_text.pack(pady=5, fill=tk.BOTH)
         if current_remarks != '-':
             self.remarks_text.insert(tk.END, current_remarks)
@@ -158,10 +165,10 @@ class NotesMenu:
 
     def rabaty_frame(self):
         #glowny frame
-        rabaty_mainframe = tk.Frame(self.main_frame,relief='solid', bd=2)
+        rabaty_mainframe = tk.Frame(self.main_frame)
         rabaty_mainframe.pack(pady = 5,fill = 'x')
         #checkbox
-        leftframe = tk.Frame(rabaty_mainframe, relief='solid', bd=2)
+        leftframe = tk.Frame(rabaty_mainframe)
         leftframe.pack(pady=1, anchor='nw')
 
         tk.Checkbutton(

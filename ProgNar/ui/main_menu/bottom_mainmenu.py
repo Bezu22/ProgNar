@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from core.doc_creator import create_document
 
 class BottomSection:
     def __init__(self, parent, cart, cart_tree, client_name, root,main_app):
@@ -68,7 +69,7 @@ class BottomSection:
             bg="red",
             fg="white",
             font=("Arial", 12, "bold"),
-            command=self.generate_pdf
+            command=self.generate_raport
         ).pack(pady=10)
 
         self.cart.update_cart_display(self.cart_tree)
@@ -163,6 +164,10 @@ class BottomSection:
             self.update_price_labels()
         self.main_app.cart.load_from_file(self.main_app.client_name)
         self.main_app.cart.update_cart_display(self.main_app.cart_tree)
+
+    def generate_raport(self):
+        create_document()
+
 
     def generate_pdf(self):
         """Generuje raport PDF."""
